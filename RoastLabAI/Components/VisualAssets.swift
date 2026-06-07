@@ -591,25 +591,34 @@ struct MascotCommitteeStrip: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 12) {
                 ForEach(mascots) { mascot in
-                    VStack(spacing: 8) {
-                        MascotIllustration(mascot: mascot, expression: .performing, size: 76, animated: true)
-                        Text(mascot.name)
-                            .font(.caption2.weight(.black))
-                            .foregroundStyle(.white)
-                            .multilineTextAlignment(.center)
-                            .lineLimit(2)
-                            .frame(width: 92, minHeight: 30)
-                    }
-                    .padding(10)
-                    .background(
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .fill(Color.white.opacity(0.07))
-                            .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(mascot.accent.opacity(0.28)))
-                    )
+                    MascotCommitteeItem(mascot: mascot)
                 }
             }
             .padding(.vertical, 2)
         }
+    }
+}
+
+private struct MascotCommitteeItem: View {
+    var mascot: RoastMascot
+
+    var body: some View {
+        VStack(spacing: 8) {
+            MascotIllustration(mascot: mascot, expression: .performing, size: 76, animated: true)
+            Text(mascot.name)
+                .font(.caption2.weight(.black))
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .frame(width: 92)
+                .frame(minHeight: 30)
+        }
+        .padding(10)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color.white.opacity(0.07))
+                .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(mascot.accent.opacity(0.28)))
+        )
     }
 }
 
@@ -874,7 +883,8 @@ struct AchievementBadgeView: View {
                 .foregroundStyle(isUnlocked ? .white : RoastLabTheme.textSecondary)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
-                .frame(width: 86, minHeight: 30)
+                .frame(width: 86)
+                .frame(minHeight: 30)
         }
         .onAppear { glow = true }
         .animation(.easeInOut(duration: 1.4).repeatForever(autoreverses: true), value: glow)

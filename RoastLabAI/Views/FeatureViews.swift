@@ -1045,6 +1045,7 @@ private func promptEditor(title: String, text: Binding<String>, height: CGFloat)
     }
 }
 
+@MainActor
 private func outputCard(title: String, prompt: String, generator: GenerationViewModel, sharePayload: Binding<SharePayload?>) -> some View {
     VStack(spacing: 12) {
         if generator.isLoading {
