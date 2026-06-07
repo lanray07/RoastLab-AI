@@ -13,23 +13,22 @@ struct OnboardingView: View {
         RoastLabBackground {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("RoastLab AI")
-                            .font(.system(size: 44, weight: .black, design: .rounded))
-                            .foregroundStyle(.white)
-                            .minimumScaleFactor(0.7)
-                        Text("Upload anything. Get roasted instantly.")
-                            .font(.title3.weight(.bold))
-                            .foregroundStyle(RoastLabTheme.hotPink)
-                        Text("The world's smartest roast machine.")
-                            .font(.callout.weight(.semibold))
-                            .foregroundStyle(RoastLabTheme.textSecondary)
-                    }
+                    ComedyHeroStageView(
+                        title: "RoastLab AI",
+                        subtitle: "Upload anything. Get roasted instantly with a comedy cast that feels more late-night show than utility app.",
+                        kicker: "Premium social entertainment",
+                        mascot: .roastProfessor,
+                        theme: .comedyClub
+                    )
                     .padding(.top, 36)
+
+                    MascotCommitteeStrip(mascots: [.roastProfessor, .memeGoblin, .britishBanterKing, .savageQueen, .friendlyBully])
 
                     GlassPanel {
                         VStack(alignment: .leading, spacing: 16) {
                             SectionHeader(title: "Comedy Profile", subtitle: "Pick the flavor of your banter.", systemImage: "person.crop.circle.badge.sparkles")
+
+                            HumanizedSceneIllustration(scene: .friends, height: 152)
 
                             Picker("Humor preference", selection: $viewModel.selectedStyle) {
                                 ForEach(HumorStyle.allCases) { style in
@@ -114,14 +113,14 @@ struct DashboardView: View {
         RoastLabBackground {
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("RoastLab AI")
-                            .font(.system(size: 34, weight: .black, design: .rounded))
-                            .foregroundStyle(.white)
-                        Text("Upload anything. Get roasted instantly.")
-                            .font(.callout.weight(.bold))
-                            .foregroundStyle(RoastLabTheme.hotPink)
-                    }
+                    ComedyHeroStageView(
+                        title: "RoastLab AI",
+                        subtitle: "A premium roast lab for creators, group chats, battles, and shareable comedy cards.",
+                        kicker: "Tonight's comedy dashboard",
+                        mascot: .memeGoblin,
+                        theme: .memeUniverse,
+                        compact: true
+                    )
                     .padding(.top, 10)
 
                     LazyVGrid(columns: grid, spacing: 12) {
@@ -132,6 +131,8 @@ struct DashboardView: View {
                     }
 
                     UpgradeBanner()
+
+                    AchievementShelfView(unlockedCount: roasts.count + clapbacks.count + battles.count + voices.count)
 
                     SectionHeader(title: "Quick Actions", subtitle: "Jump straight into the roast lab.", systemImage: "wand.and.stars")
                     LazyVGrid(columns: grid, spacing: 12) {
@@ -200,6 +201,9 @@ struct CreateHubView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     SectionHeader(title: "Create", subtitle: "Every roast tool in one premium studio.", systemImage: "wand.and.stars")
+                    HumanizedSceneIllustration(scene: .creators, height: 186)
+                    MascotCommitteeStrip(mascots: [.savageQueen, .roastProfessor, .memeGoblin])
+
                     LazyVGrid(columns: grid, spacing: 12) {
                         ForEach(modules, id: \.title) { module in
                             NavigationLink(value: module.route) {
@@ -212,10 +216,7 @@ struct CreateHubView: View {
                     NavigationLink(value: AppRoute.personas) {
                         GlassPanel {
                             HStack(spacing: 14) {
-                                Image(systemName: "theatermasks.fill")
-                                    .foregroundStyle(.black)
-                                    .frame(width: 42, height: 42)
-                                    .background(Circle().fill(RoastLabTheme.hotPink))
+                                MascotIllustration(mascot: .britishBanterKing, expression: .performing, size: 64, animated: true)
                                 VStack(alignment: .leading, spacing: 3) {
                                     Text("Roast Personality Profiles")
                                         .font(.headline.weight(.black))
@@ -266,7 +267,13 @@ struct PhotoRoastGeneratorView: View {
                                 .frame(maxWidth: .infinity)
                                 .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                         } else {
-                            EmptyStateView(title: "Add a photo", message: "Mock image analysis will generate safe observations.", systemImage: "camera.fill")
+                            PremiumEmptyStateView(
+                                title: "No victims selected yet.",
+                                message: "Add a selfie, group shot, or social screenshot and the committee will warm up.",
+                                mascot: .memeGoblin,
+                                scene: .socialHumor,
+                                framed: false
+                            )
                         }
 
                         Label(isAnalyzing ? "Analyzing image" : analysis?.summary ?? "Ready for upload", systemImage: "eye.fill")
@@ -397,7 +404,7 @@ struct VoiceRoastFeatureView: View {
         generatorScreen(title: "Voice Roast", subtitle: "Record stories, describe friends, edit the transcript, and preview a spoken roast.") {
             GlassPanel {
                 VStack(spacing: 16) {
-                    VoiceWaveformView(levels: waveform.levels)
+                    ComedyClubVoiceStageView(levels: waveform.levels, isGenerating: generator.isLoading)
                     HStack(spacing: 10) {
                         NeonButton(title: speech.isRecording ? "Stop" : "Record", systemImage: speech.isRecording ? "stop.fill" : "mic.fill", tint: speech.isRecording ? RoastLabTheme.warning : RoastLabTheme.hotPink) {
                             Task { await toggleRecording() }
@@ -514,6 +521,10 @@ struct RoastBattleModeView: View {
                 Task { await generate() }
             }
 
+            if generator.isLoading {
+                ComedyLoadingView(mascot: .friendlyBully)
+            }
+
             if !generator.output.isEmpty {
                 RoastBattleCard(participantA: "Person A", participantB: "Person B", battle: generator.output)
             }
@@ -547,6 +558,10 @@ struct ClapbackGeneratorView: View {
 
             NeonButton(title: "Generate Clapback", systemImage: "bolt.fill", tint: RoastLabTheme.acidGreen, isLoading: generator.isLoading) {
                 Task { await generate() }
+            }
+
+            if generator.isLoading {
+                ComedyLoadingView(mascot: .britishBanterKing)
             }
 
             if !generator.output.isEmpty {
@@ -630,6 +645,10 @@ struct MemeGeneratorView: View {
                 Task { await generate() }
             }
 
+            if generator.isLoading {
+                ComedyLoadingView(mascot: .memeGoblin)
+            }
+
             if !generator.output.isEmpty {
                 ShareCardPreview(title: "Meme Roast", bodyText: generator.output)
                 RoastCard(title: "Caption Pack", roast: generator.output, observations: generator.observations) {
@@ -679,6 +698,10 @@ struct CreatorStudioView: View {
                 Task { await generate() }
             }
 
+            if generator.isLoading {
+                ComedyLoadingView(mascot: .savageQueen)
+            }
+
             if !generator.output.isEmpty {
                 RoastCard(title: "Creator Pack", roast: generator.output, observations: generator.observations) {
                     sharePayload = SharePayload(text: generator.output)
@@ -709,6 +732,7 @@ struct PersonalityProfilesView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     SectionHeader(title: "Roast Personality Profiles", subtitle: "Unlocked through usage and ready for future premium routing.", systemImage: "theatermasks.fill")
+                    MascotCommitteeStrip(mascots: [.roastProfessor, .memeGoblin, .britishBanterKing, .savageQueen, .friendlyBully])
                     ForEach(personas) { persona in
                         ComedyPersonaCard(persona: persona)
                     }
@@ -750,7 +774,9 @@ struct AnalyticsDashboardView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     SectionHeader(title: "Analytics Dashboard", subtitle: "Roast count, most used style, funniest content, share rate, and streaks.", systemImage: "chart.bar.xaxis")
+                    HumanizedSceneIllustration(scene: .audience, height: 170)
                     AnalyticsChartCard(title: "Content Mix", points: points)
+                    AchievementShelfView(unlockedCount: roasts.count + clapbacks.count + battles.count + voices.count)
 
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                         MetricTile(title: "Most used style", value: profiles.first?.resolvedHumorStyle.displayName ?? "Playful", systemImage: "paintpalette.fill", tint: RoastLabTheme.hotPink)
@@ -778,6 +804,7 @@ struct ShareCardsView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     SectionHeader(title: "Share Cards", subtitle: "Optimized for TikTok, Instagram, X, and WhatsApp.", systemImage: "square.and.arrow.up.fill")
+                    ReactionRailView(reactions: [.laughing, .shocked, .cryingWithLaughter, .savage, .applause])
 
                     if let roast = roasts.first {
                         ShareCardPreview(title: roast.resolvedType.displayName, bodyText: roast.generatedRoast)
@@ -851,6 +878,7 @@ struct SettingsView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     SectionHeader(title: "Settings", subtitle: "Subscription, comedy preferences, voice settings, privacy, safety, and local data.", systemImage: "gearshape.fill")
+                    HumanizedSceneIllustration(scene: .groupChat, height: 160)
 
                     GlassPanel {
                         VStack(alignment: .leading, spacing: 14) {
@@ -877,7 +905,7 @@ struct SettingsView: View {
                                 .tint(RoastLabTheme.hotPink)
                             Toggle("Mock AI enabled", isOn: .constant(true))
                                 .tint(RoastLabTheme.acidGreen)
-                            Text("RemoteAIService is scaffolded for https://YOUR_BACKEND_URL.com/roastlab-ai.")
+                            Text("Remote AI can be connected in AppServices when your production roast endpoint is ready.")
                                 .font(.caption)
                                 .foregroundStyle(RoastLabTheme.textSecondary)
                         }
@@ -886,8 +914,8 @@ struct SettingsView: View {
                     GlassPanel {
                         VStack(alignment: .leading, spacing: 12) {
                             SectionHeader(title: "Safety Guidelines", subtitle: "Comedic roasts only. No hate speech, harassment, threats, sexual abuse content, protected-class attacks, bullying minors, self-harm, or extremist content.", systemImage: "checkmark.shield.fill")
-                            Link("Privacy Policy", destination: URL(string: "https://YOUR_BACKEND_URL.com/privacy")!)
-                            Link("Terms of Use", destination: URL(string: "https://YOUR_BACKEND_URL.com/terms")!)
+                            Link("Privacy Policy", destination: URL(string: "https://github.com/lanray07/RoastLab-AI/blob/main/PRIVACY.md")!)
+                            Link("Terms of Use", destination: URL(string: "https://github.com/lanray07/RoastLab-AI")!)
                         }
                         .foregroundStyle(RoastLabTheme.electricBlue)
                     }
@@ -969,6 +997,7 @@ private func generatorScreen<Content: View>(title: String, subtitle: String, @Vi
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 SectionHeader(title: title, subtitle: subtitle, systemImage: "sparkles")
+                HumanizedSceneIllustration(scene: sceneForTitle(title), height: 176)
                 content()
             }
             .padding(20)
@@ -976,6 +1005,27 @@ private func generatorScreen<Content: View>(title: String, subtitle: String, @Vi
     }
     .navigationTitle(title)
     .navigationBarTitleDisplayMode(.inline)
+}
+
+private func sceneForTitle(_ title: String) -> RoastScene {
+    let lowered = title.lowercased()
+    if lowered.contains("voice") { return .audience }
+    if lowered.contains("battle") { return .battle }
+    if lowered.contains("clapback") { return .groupChat }
+    if lowered.contains("meme") { return .socialHumor }
+    if lowered.contains("creator") { return .creators }
+    return .friends
+}
+
+private func mascotForTitle(_ title: String) -> RoastMascot {
+    let lowered = title.lowercased()
+    if lowered.contains("voice") { return .roastProfessor }
+    if lowered.contains("battle") { return .friendlyBully }
+    if lowered.contains("clapback") { return .britishBanterKing }
+    if lowered.contains("meme") || lowered.contains("photo") { return .memeGoblin }
+    if lowered.contains("workplace") { return .roastProfessor }
+    if lowered.contains("creator") { return .savageQueen }
+    return .savageQueen
 }
 
 private func promptEditor(title: String, text: Binding<String>, height: CGFloat) -> some View {
@@ -998,16 +1048,7 @@ private func promptEditor(title: String, text: Binding<String>, height: CGFloat)
 private func outputCard(title: String, prompt: String, generator: GenerationViewModel, sharePayload: Binding<SharePayload?>) -> some View {
     VStack(spacing: 12) {
         if generator.isLoading {
-            GlassPanel {
-                HStack(spacing: 12) {
-                    ProgressView()
-                        .tint(.white)
-                    Text("Cooking a safe roast...")
-                        .font(.headline.weight(.bold))
-                        .foregroundStyle(.white)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
+            ComedyLoadingView(mascot: mascotForTitle(title))
         }
 
         if let error = generator.errorMessage {
@@ -1023,7 +1064,11 @@ private func outputCard(title: String, prompt: String, generator: GenerationView
                 sharePayload.wrappedValue = SharePayload(text: generator.output)
             }
         } else if !generator.isLoading {
-            EmptyStateView(title: "Output preview", message: "Generated roasts, observations, and share-ready copy will land here.", systemImage: "quote.bubble.fill")
+            EmptyStateView(
+                title: "Your roast lab is suspiciously quiet.",
+                message: prompt.isEmpty ? "Add a setup, then the committee will make it shareable." : "Time to create comedy history.",
+                systemImage: "quote.bubble.fill"
+            )
         }
     }
 }
@@ -1073,6 +1118,7 @@ private func placeholderScreen(title: String, subtitle: String, icon: String, ro
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 SectionHeader(title: title, subtitle: subtitle, systemImage: icon)
+                HumanizedSceneIllustration(scene: .audience, height: 170)
                 ForEach(rows, id: \.self) { row in
                     GlassPanel {
                         Label(row, systemImage: "checkmark.circle.fill")

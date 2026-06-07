@@ -184,14 +184,17 @@ struct QuickActionTile: View {
         GlassPanel(padding: 14) {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
-                    Image(systemName: systemImage)
-                        .font(.title3.weight(.bold))
-                        .foregroundStyle(.white)
-                        .frame(width: 42, height: 42)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .fill(tint)
-                        )
+                    ZStack(alignment: .bottomTrailing) {
+                        HumanizedSceneIllustration(scene: visualScene, height: 58)
+                            .frame(width: 74)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        Image(systemName: systemImage)
+                            .font(.caption.weight(.black))
+                            .foregroundStyle(.black)
+                            .frame(width: 24, height: 24)
+                            .background(Circle().fill(tint))
+                            .offset(x: 4, y: 4)
+                    }
                     Spacer()
                     Image(systemName: "chevron.right")
                         .font(.caption.weight(.bold))
@@ -212,6 +215,16 @@ struct QuickActionTile: View {
             }
             .frame(maxWidth: .infinity, minHeight: 118, alignment: .topLeading)
         }
+    }
+
+    private var visualScene: RoastScene {
+        let lowered = title.lowercased()
+        if lowered.contains("voice") { return .audience }
+        if lowered.contains("battle") { return .battle }
+        if lowered.contains("meme") { return .socialHumor }
+        if lowered.contains("clapback") { return .groupChat }
+        if lowered.contains("studio") || lowered.contains("share") { return .creators }
+        return .friends
     }
 }
 
@@ -250,19 +263,29 @@ struct EmptyStateView: View {
     var systemImage: String
 
     var body: some View {
-        VStack(spacing: 12) {
-            Image(systemName: systemImage)
-                .font(.largeTitle)
-                .foregroundStyle(RoastLabTheme.hotPink)
-            Text(title)
-                .font(.headline.weight(.bold))
-                .foregroundStyle(.white)
-            Text(message)
-                .font(.subheadline)
-                .foregroundStyle(RoastLabTheme.textSecondary)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(26)
+        PremiumEmptyStateView(
+            title: title,
+            message: message,
+            mascot: mascot,
+            scene: scene
+        )
+    }
+
+    private var mascot: RoastMascot {
+        let lowered = "\(title) \(message) \(systemImage)".lowercased()
+        if lowered.contains("profile") { return .roastProfessor }
+        if lowered.contains("share") || lowered.contains("card") { return .savageQueen }
+        if lowered.contains("photo") || lowered.contains("meme") { return .memeGoblin }
+        if lowered.contains("voice") { return .britishBanterKing }
+        return .friendlyBully
+    }
+
+    private var scene: RoastScene {
+        let lowered = "\(title) \(message) \(systemImage)".lowercased()
+        if lowered.contains("share") || lowered.contains("creator") { return .creators }
+        if lowered.contains("battle") { return .battle }
+        if lowered.contains("voice") { return .audience }
+        if lowered.contains("meme") || lowered.contains("photo") { return .socialHumor }
+        return .groupChat
     }
 }

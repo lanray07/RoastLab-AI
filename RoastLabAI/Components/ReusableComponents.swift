@@ -17,33 +17,46 @@ struct RoastCard: View {
 
     var body: some View {
         GlassPanel {
-            VStack(alignment: .leading, spacing: 14) {
-                HStack {
+            VStack(alignment: .leading, spacing: 16) {
+                HStack(alignment: .top, spacing: 12) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(title)
                             .font(.headline.weight(.bold))
                             .foregroundStyle(.white)
-                        Text("Roast score \(score)")
+                        Text("Share-ready comedy card")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(RoastLabTheme.acidGreen)
                     }
                     Spacer()
-                    if let onShare {
-                        Button(action: onShare) {
-                            Image(systemName: "square.and.arrow.up")
-                                .font(.headline)
-                                .foregroundStyle(.white)
-                                .frame(width: 38, height: 38)
-                                .background(Circle().fill(RoastLabTheme.hotPink.opacity(0.22)))
+                    ZStack(alignment: .bottomTrailing) {
+                        MascotIllustration(mascot: .savageQueen, expression: .laughing, size: 72, animated: true)
+                        if let onShare {
+                            Button(action: onShare) {
+                                Image(systemName: "square.and.arrow.up")
+                                    .font(.headline)
+                                    .foregroundStyle(.black)
+                                    .frame(width: 36, height: 36)
+                                    .background(Circle().fill(RoastLabTheme.acidGreen))
+                            }
+                            .accessibilityLabel("Share roast")
                         }
-                        .accessibilityLabel("Share roast")
                     }
                 }
 
                 Text(roast)
-                    .font(.body.weight(.semibold))
+                    .font(.title3.weight(.black))
                     .foregroundStyle(.white)
+                    .minimumScaleFactor(0.74)
                     .fixedSize(horizontal: false, vertical: true)
+
+                HStack(spacing: 12) {
+                    ReactionRailView(reactions: [.laughing, .cryingWithLaughter, .savage, .applause])
+                    Spacer()
+                    Text("\(score)")
+                        .font(.system(size: 34, weight: .black, design: .rounded))
+                        .foregroundStyle(RoastLabTheme.acidGreen)
+                        .accessibilityLabel("Roast score \(score)")
+                }
 
                 if !observations.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
@@ -66,17 +79,27 @@ struct ClapbackCard: View {
 
     var body: some View {
         GlassPanel {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Label("Clapback", systemImage: "bolt.fill")
-                        .font(.headline.weight(.bold))
-                        .foregroundStyle(RoastLabTheme.electricBlue)
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .center, spacing: 12) {
+                    ReactionAvatarView(reaction: .savage, size: 54)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Clapback")
+                            .font(.headline.weight(.black))
+                            .foregroundStyle(.white)
+                        Text("Instant reply energy")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(RoastLabTheme.electricBlue)
+                    }
                     Spacer()
                     if let onShare {
                         Button(action: onShare) {
                             Image(systemName: "paperplane.fill")
-                                .foregroundStyle(.white)
+                                .font(.headline)
+                                .foregroundStyle(.black)
+                                .frame(width: 36, height: 36)
+                                .background(Circle().fill(RoastLabTheme.electricBlue))
                         }
+                        .accessibilityLabel("Share clapback")
                     }
                 }
                 Text(context)
@@ -112,10 +135,14 @@ struct RoastBattleCard: View {
                 }
                 .foregroundStyle(.white)
 
+                HumanizedSceneIllustration(scene: .battle, height: 150)
+
                 Text(battle)
                     .font(.callout.weight(.semibold))
                     .foregroundStyle(.white)
                     .fixedSize(horizontal: false, vertical: true)
+
+                ReactionRailView(reactions: [.shocked, .laughing, .facepalm, .applause])
             }
         }
     }
@@ -149,28 +176,7 @@ struct ComedyPersonaCard: View {
     var persona: ComedyPersona
 
     var body: some View {
-        GlassPanel {
-            HStack(spacing: 14) {
-                Image(systemName: persona.unlocked ? "theatermasks.fill" : "lock.fill")
-                    .font(.title3)
-                    .foregroundStyle(persona.unlocked ? RoastLabTheme.hotPink : RoastLabTheme.textSecondary)
-                    .frame(width: 44, height: 44)
-                    .background(Circle().fill(Color.white.opacity(0.08)))
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(persona.name)
-                        .font(.headline.weight(.bold))
-                        .foregroundStyle(.white)
-                    Text(persona.tagline)
-                        .font(.caption)
-                        .foregroundStyle(RoastLabTheme.textSecondary)
-                }
-                Spacer()
-                Text(persona.unlocked ? "Unlocked" : "Locked")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(persona.unlocked ? RoastLabTheme.acidGreen : RoastLabTheme.warning)
-            }
-        }
+        MascotProfileCard(mascot: RoastMascot.persona(named: persona.name), isUnlocked: persona.unlocked)
     }
 }
 
@@ -212,21 +218,41 @@ struct ShareCardPreview: View {
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(RoastLabTheme.brandGradient)
-            VStack(alignment: .leading, spacing: 16) {
-                Text(title.uppercased())
-                    .font(.caption.weight(.black))
-                    .foregroundStyle(.white.opacity(0.78))
+            RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .fill(RoastVisualTheme.memeUniverse.gradient)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 26, style: .continuous)
+                        .strokeBorder(Color.white.opacity(0.18), lineWidth: 1)
+                )
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .center) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(title.uppercased())
+                            .font(.caption.weight(.black))
+                            .foregroundStyle(.white.opacity(0.78))
+                        Text("Creator share card")
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(RoastLabTheme.acidGreen)
+                    }
+                    Spacer()
+                    ReactionAvatarView(reaction: .laughing, size: 48)
+                }
+
                 Text(bodyText)
                     .font(.system(size: 26, weight: .black, design: .rounded))
                     .foregroundStyle(.white)
                     .minimumScaleFactor(0.58)
-                    .lineLimit(7)
+                    .lineLimit(6)
                 Spacer(minLength: 0)
-                Text(footer)
-                    .font(.headline.weight(.black))
-                    .foregroundStyle(.white)
+                HumanizedSceneIllustration(scene: .socialHumor, height: 116)
+                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                HStack {
+                    Text(footer)
+                        .font(.headline.weight(.black))
+                        .foregroundStyle(.white)
+                    Spacer()
+                    ReactionRailView(reactions: [.laughing, .shocked, .savage])
+                }
             }
             .padding(24)
         }
@@ -242,10 +268,7 @@ struct UpgradeBanner: View {
     var body: some View {
         NavigationLink(value: AppRoute.paywall) {
             HStack(spacing: 14) {
-                Image(systemName: "crown.fill")
-                    .foregroundStyle(.black)
-                    .frame(width: 42, height: 42)
-                    .background(Circle().fill(RoastLabTheme.acidGreen))
+                MascotIllustration(mascot: .roastProfessor, expression: .performing, size: 64, animated: true)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(title)
                         .font(.headline.weight(.black))
@@ -253,7 +276,7 @@ struct UpgradeBanner: View {
                     Text(message)
                         .font(.caption)
                         .foregroundStyle(.white.opacity(0.76))
-                        .lineLimit(2)
+                        .lineLimit(3)
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
@@ -286,19 +309,18 @@ private struct PaywallContent: View {
         RoastLabBackground {
             ScrollView {
                 VStack(spacing: 22) {
-                    VStack(spacing: 10) {
-                        Image(systemName: "crown.fill")
-                            .font(.system(size: 48, weight: .black))
-                            .foregroundStyle(RoastLabTheme.acidGreen)
-                        Text("RoastLab Pro")
-                            .font(.system(size: 38, weight: .black, design: .rounded))
-                            .foregroundStyle(.white)
-                        Text("The world's smartest roast machine, tuned for viral creators.")
-                            .font(.callout.weight(.semibold))
-                            .foregroundStyle(RoastLabTheme.textSecondary)
-                            .multilineTextAlignment(.center)
-                    }
+                    ComedyHeroStageView(
+                        title: "RoastLab Pro",
+                        subtitle: "Unlimited battles, voice roasts, premium share cards, achievement art, and creator exports.",
+                        kicker: "Premium comedy membership",
+                        mascot: .savageQueen,
+                        theme: .neonRoast
+                    )
                     .padding(.top, 24)
+
+                    MascotCommitteeStrip(mascots: [.roastProfessor, .memeGoblin, .britishBanterKing, .savageQueen, .friendlyBully])
+
+                    AchievementShelfView(unlockedCount: 4)
 
                     ForEach([SubscriptionPlan.roastProMonthly, .roastProYearly, .creatorProMonthly]) { plan in
                         PlanRow(plan: plan, isSelected: selectedPlan == plan) {
@@ -335,7 +357,7 @@ private struct PaywallContent: View {
                         }
                     }
 
-                    Text("Mock subscription activation is enabled for local development. Replace product identifiers before App Store submission.")
+                    Text("Mock activation stays available for local development. Live StoreKit products load from App Store Connect when available.")
                         .font(.footnote)
                         .foregroundStyle(RoastLabTheme.textSecondary)
                         .multilineTextAlignment(.center)
@@ -361,7 +383,8 @@ private struct PlanRow: View {
         Button(action: action) {
             GlassPanel {
                 VStack(alignment: .leading, spacing: 12) {
-                    HStack {
+                    HStack(spacing: 12) {
+                        ReactionAvatarView(reaction: plan.reaction, size: 46, animated: isSelected)
                         VStack(alignment: .leading, spacing: 4) {
                             Text(plan.displayName)
                                 .font(.headline.weight(.black))
@@ -385,6 +408,17 @@ private struct PlanRow: View {
             }
         }
         .buttonStyle(.plain)
+    }
+}
+
+private extension SubscriptionPlan {
+    var reaction: RoastReaction {
+        switch self {
+        case .free: .impressed
+        case .roastProMonthly: .laughing
+        case .roastProYearly: .applause
+        case .creatorProMonthly: .savage
+        }
     }
 }
 

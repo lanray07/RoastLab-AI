@@ -279,11 +279,10 @@ final class SubscriptionState: Identifiable {
 
 extension ComedyPersona {
     static let starterPersonas: [(name: String, tagline: String, unlocked: Bool)] = [
-        ("British Banter Master", "Dry wit with tea-level precision.", true),
-        ("Savage Professor", "Grades excuses and returns them with notes.", false),
-        ("Meme Goblin", "Chaotic captions for terminally online moments.", false),
-        ("Deadpan Assassin", "One eyebrow raise, maximum damage.", false),
-        ("Roast Wizard", "Turns awkward details into comedy spells.", false),
-        ("Comedy Critic", "Premium notes, brutal timing, velvet gloves.", false)
+        ("The Roast Professor", "Older witty comedian in a luxury suit with intelligent banter.", true),
+        ("Meme Goblin", "Chaotic internet culture expert with hoodie energy and reaction timing.", true),
+        ("British Banter King", "Deadpan sarcasm, classy timing, and a tea-cup pause before impact.", false),
+        ("Savage Queen", "Glamorous confidence with hilarious observations and premium stage presence.", false),
+        ("The Friendly Bully", "Goofy, playful, non-threatening hype-roaster who keeps it fun.", false)
     ]
 }
