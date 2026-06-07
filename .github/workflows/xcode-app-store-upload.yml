@@ -69,7 +69,9 @@ jobs:
       - name: Create temporary App Store signing assets
         run: |
           set -euo pipefail
-          python3 -m pip install --user --quiet pyjwt cryptography requests
+          python3 -m venv "$RUNNER_TEMP/signing-venv"
+          "$RUNNER_TEMP/signing-venv/bin/python" -m pip install --quiet --upgrade pip
+          "$RUNNER_TEMP/signing-venv/bin/python" -m pip install --quiet pyjwt cryptography requests
 
           SIGNING_DIR="$RUNNER_TEMP/signing"
           KEYCHAIN_PATH="$RUNNER_TEMP/roastlab-signing.keychain-db"
@@ -84,7 +86,7 @@ jobs:
             -out "$SIGNING_DIR/distribution.csr" \
             -subj "/CN=RoastLab AI GitHub Actions"
 
-          python3 - <<'PY'
+          "$RUNNER_TEMP/signing-venv/bin/python" - <<'PY'
           import base64
           import json
           import os
@@ -374,48 +376,53 @@ jobs:
           RESOURCES_JSON="$SIGNING_DIR/appstore-signing-resources.json"
 
           if [ -f "$RESOURCES_JSON" ]; then
-            python3 -m pip install --user --quiet pyjwt cryptography requests
-            python3 - <<'PY'
-            import json
-            import os
-            import time
-            from pathlib import Path
+            PYTHON_BIN="$RUNNER_TEMP/signing-venv/bin/python"
+            if [ ! -x "$PYTHON_BIN" ]; then
+              python3 -m venv "$RUNNER_TEMP/signing-venv"
+              "$PYTHON_BIN" -m pip install --quiet --upgrade pip
+              "$PYTHON_BIN" -m pip install --quiet pyjwt cryptography requests
+            fi
+            "$PYTHON_BIN" - <<'PY'
+          import json
+          import os
+          import time
+          from pathlib import Path
 
-            import jwt
-            import requests
+          import jwt
+          import requests
 
-            resources_path = Path(os.environ["RUNNER_TEMP"]) / "signing" / "appstore-signing-resources.json"
-            if not resources_path.exists():
-                raise SystemExit(0)
+          resources_path = Path(os.environ["RUNNER_TEMP"]) / "signing" / "appstore-signing-resources.json"
+          if not resources_path.exists():
+              raise SystemExit(0)
 
-            resources = json.loads(resources_path.read_text() or "{}")
-            key_id = os.environ["ASC_KEY_ID"]
-            issuer_id = os.environ["ASC_ISSUER_ID"]
-            private_key = (Path(os.environ["RUNNER_TEMP"]) / "appstoreconnect" / f"AuthKey_{key_id}.p8").read_text()
-            base_url = "https://api.appstoreconnect.apple.com/v1"
+          resources = json.loads(resources_path.read_text() or "{}")
+          key_id = os.environ["ASC_KEY_ID"]
+          issuer_id = os.environ["ASC_ISSUER_ID"]
+          private_key = (Path(os.environ["RUNNER_TEMP"]) / "appstoreconnect" / f"AuthKey_{key_id}.p8").read_text()
+          base_url = "https://api.appstoreconnect.apple.com/v1"
 
-            def token():
-                now = int(time.time())
-                return jwt.encode(
-                    {"iss": issuer_id, "iat": now, "exp": now + 1200, "aud": "appstoreconnect-v1"},
-                    private_key,
-                    algorithm="ES256",
-                    headers={"kid": key_id, "typ": "JWT"},
-                )
+          def token():
+              now = int(time.time())
+              return jwt.encode(
+                  {"iss": issuer_id, "iat": now, "exp": now + 1200, "aud": "appstoreconnect-v1"},
+                  private_key,
+                  algorithm="ES256",
+                  headers={"kid": key_id, "typ": "JWT"},
+              )
 
-            def delete(path):
-                response = requests.delete(
-                    base_url + path,
-                    headers={"Authorization": "Bearer " + token()},
-                    timeout=120,
-                )
-                print(f"DELETE {path}: {response.status_code}")
+          def delete(path):
+              response = requests.delete(
+                  base_url + path,
+                  headers={"Authorization": "Bearer " + token()},
+                  timeout=120,
+              )
+              print(f"DELETE {path}: {response.status_code}")
 
-            if resources.get("profileId"):
-                delete(f"/profiles/{resources['profileId']}")
-            if resources.get("certificateId"):
-                delete(f"/certificates/{resources['certificateId']}")
-            PY
+          if resources.get("profileId"):
+              delete(f"/profiles/{resources['profileId']}")
+          if resources.get("certificateId"):
+              delete(f"/certificates/{resources['certificateId']}")
+          PY
           fi
 
           if [ -n "${KEYCHAIN_PATH:-}" ]; then
