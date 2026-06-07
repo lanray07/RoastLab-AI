@@ -14,7 +14,7 @@ permissions:
 jobs:
   archive-upload:
     name: Archive and upload RoastLab AI
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 60
 
     env:
@@ -44,8 +44,17 @@ jobs:
       - name: Select Xcode
         run: |
           set -euo pipefail
-          sudo xcode-select -s /Applications/Xcode.app
+          XCODE_APP="$(python3 - <<'PY'
+          from pathlib import Path
+
+          candidates = sorted(Path("/Applications").glob("Xcode_26*.app"), key=lambda path: path.name)
+          print(candidates[-1] if candidates else Path("/Applications/Xcode.app"))
+          PY
+          )"
+          echo "Selecting Xcode at $XCODE_APP"
+          sudo xcode-select -s "$XCODE_APP/Contents/Developer"
           xcodebuild -version
+          xcodebuild -showsdks
 
       - name: Write App Store Connect API key
         run: |
