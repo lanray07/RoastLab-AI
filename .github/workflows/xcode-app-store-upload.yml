@@ -215,6 +215,7 @@ jobs:
             -out "$SIGNING_DIR/distribution.pem"
           openssl pkcs12 \
             -export \
+            -legacy \
             -inkey "$SIGNING_DIR/distribution.key" \
             -in "$SIGNING_DIR/distribution.pem" \
             -out "$SIGNING_DIR/distribution.p12" \
