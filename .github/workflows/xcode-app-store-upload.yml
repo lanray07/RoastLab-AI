@@ -21,7 +21,7 @@ jobs:
       PROJECT_PATH: RoastLabAI.xcodeproj
       SCHEME: RoastLabAI
       CONFIGURATION: Release
-      BUNDLE_IDENTIFIER: com.roastlab.ai
+      BUNDLE_IDENTIFIER: com.roastlabai.app
       ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
       ASC_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_API_PRIVATE_KEY }}
@@ -66,6 +66,174 @@ jobs:
               path.chmod(0o600)
           PY
 
+      - name: Create temporary App Store signing assets
+        run: |
+          set -euo pipefail
+          python3 -m pip install --user --quiet pyjwt cryptography requests
+
+          SIGNING_DIR="$RUNNER_TEMP/signing"
+          KEYCHAIN_PATH="$RUNNER_TEMP/roastlab-signing.keychain-db"
+          KEYCHAIN_PASSWORD="$(uuidgen)"
+          CERT_PASSWORD="$(uuidgen)"
+          mkdir -p "$SIGNING_DIR" "$HOME/Library/MobileDevice/Provisioning Profiles"
+
+          openssl genrsa -out "$SIGNING_DIR/distribution.key" 2048
+          openssl req \
+            -new \
+            -key "$SIGNING_DIR/distribution.key" \
+            -out "$SIGNING_DIR/distribution.csr" \
+            -subj "/CN=RoastLab AI GitHub Actions"
+
+          python3 - <<'PY'
+          import base64
+          import json
+          import os
+          import time
+          from pathlib import Path
+
+          import jwt
+          import requests
+
+          base_url = "https://api.appstoreconnect.apple.com/v1"
+          temp_dir = Path(os.environ["RUNNER_TEMP"])
+          signing_dir = temp_dir / "signing"
+          resources_path = signing_dir / "appstore-signing-resources.json"
+
+          key_id = os.environ["ASC_KEY_ID"]
+          issuer_id = os.environ["ASC_ISSUER_ID"]
+          private_key = (temp_dir / "appstoreconnect" / f"AuthKey_{key_id}.p8").read_text()
+
+          def write_resources(data):
+              resources_path.write_text(json.dumps(data, indent=2))
+
+          resources = {}
+          write_resources(resources)
+
+          def token():
+              now = int(time.time())
+              return jwt.encode(
+                  {"iss": issuer_id, "iat": now, "exp": now + 1200, "aud": "appstoreconnect-v1"},
+                  private_key,
+                  algorithm="ES256",
+                  headers={"kid": key_id, "typ": "JWT"},
+              )
+
+          def api(method, path, **kwargs):
+              headers = kwargs.pop("headers", {})
+              merged = {"Authorization": "Bearer " + token()}
+              if kwargs.get("json") is not None:
+                  merged["Content-Type"] = "application/json"
+              merged.update(headers)
+              response = requests.request(method, base_url + path, headers=merged, timeout=120, **kwargs)
+              if not 200 <= response.status_code < 300:
+                  raise RuntimeError(f"{method} {path} failed {response.status_code}: {response.text[:2000]}")
+              if response.status_code == 204 or not response.content:
+                  return None
+              return response.json()
+
+          bundle_identifier = os.environ["BUNDLE_IDENTIFIER"]
+          bundle_response = api("GET", f"/bundleIds?filter[identifier]={bundle_identifier}&limit=1")
+          bundle_ids = bundle_response.get("data", [])
+          if not bundle_ids:
+              raise RuntimeError(f"No Bundle ID exists for {bundle_identifier}. Create it in Certificates, Identifiers & Profiles first.")
+          bundle_id = bundle_ids[0]["id"]
+
+          csr_content = (signing_dir / "distribution.csr").read_text()
+          certificate = None
+          last_error = None
+          for certificate_type in ["DISTRIBUTION", "IOS_DISTRIBUTION"]:
+              try:
+                  certificate = api("POST", "/certificates", json={
+                      "data": {
+                          "type": "certificates",
+                          "attributes": {
+                              "certificateType": certificate_type,
+                              "csrContent": csr_content,
+                          },
+                      }
+                  })["data"]
+                  break
+              except Exception as exc:
+                  last_error = exc
+          if certificate is None:
+              raise RuntimeError(f"Unable to create distribution certificate: {last_error}")
+
+          resources["certificateId"] = certificate["id"]
+          write_resources(resources)
+          cert_content = certificate["attributes"]["certificateContent"]
+          (signing_dir / "distribution.cer").write_bytes(base64.b64decode(cert_content))
+
+          profile = None
+          last_error = None
+          profile_name = f"RoastLab AI App Store {os.environ['GITHUB_RUN_ID']}-{os.environ['GITHUB_RUN_ATTEMPT']}"
+          for profile_type in ["IOS_APP_STORE", "APP_STORE"]:
+              try:
+                  profile = api("POST", "/profiles", json={
+                      "data": {
+                          "type": "profiles",
+                          "attributes": {
+                              "name": profile_name,
+                              "profileType": profile_type,
+                          },
+                          "relationships": {
+                              "bundleId": {"data": {"type": "bundleIds", "id": bundle_id}},
+                              "certificates": {"data": [{"type": "certificates", "id": certificate["id"]}]},
+                          },
+                      }
+                  })["data"]
+                  break
+              except Exception as exc:
+                  last_error = exc
+          if profile is None:
+              raise RuntimeError(f"Unable to create App Store provisioning profile: {last_error}")
+
+          resources["profileId"] = profile["id"]
+          write_resources(resources)
+          profile_content = profile["attributes"]["profileContent"]
+          (signing_dir / "profile.mobileprovision").write_bytes(base64.b64decode(profile_content))
+          (signing_dir / "signing.env").write_text(
+              f"PROFILE_NAME={profile_name}\n"
+              f"CERTIFICATE_ID={certificate['id']}\n"
+              f"PROFILE_ID={profile['id']}\n"
+          )
+          PY
+
+          openssl x509 \
+            -inform DER \
+            -in "$SIGNING_DIR/distribution.cer" \
+            -out "$SIGNING_DIR/distribution.pem"
+          openssl pkcs12 \
+            -export \
+            -inkey "$SIGNING_DIR/distribution.key" \
+            -in "$SIGNING_DIR/distribution.pem" \
+            -out "$SIGNING_DIR/distribution.p12" \
+            -passout "pass:$CERT_PASSWORD"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security default-keychain -s "$KEYCHAIN_PATH"
+          security list-keychains -d user -s "$KEYCHAIN_PATH"
+          security import "$SIGNING_DIR/distribution.p12" \
+            -k "$KEYCHAIN_PATH" \
+            -P "$CERT_PASSWORD" \
+            -T /usr/bin/codesign \
+            -T /usr/bin/security
+          security set-key-partition-list \
+            -S apple-tool:,apple:,codesign: \
+            -s \
+            -k "$KEYCHAIN_PASSWORD" \
+            "$KEYCHAIN_PATH"
+
+          security cms -D -i "$SIGNING_DIR/profile.mobileprovision" > "$SIGNING_DIR/profile.plist"
+          PROFILE_UUID="$(/usr/libexec/PlistBuddy -c 'Print UUID' "$SIGNING_DIR/profile.plist")"
+          cp "$SIGNING_DIR/profile.mobileprovision" "$HOME/Library/MobileDevice/Provisioning Profiles/$PROFILE_UUID.mobileprovision"
+
+          cat "$SIGNING_DIR/signing.env" >> "$GITHUB_ENV"
+          echo "PROFILE_UUID=$PROFILE_UUID" >> "$GITHUB_ENV"
+          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> "$GITHUB_ENV"
+          security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+
       - name: Show project configuration
         run: |
           set -euo pipefail
@@ -76,8 +244,10 @@ jobs:
             -configuration "$CONFIGURATION" \
             DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
             PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_IDENTIFIER" \
-            CODE_SIGN_STYLE=Automatic \
+            CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="Apple Distribution" \
+            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
+            OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH" \
             | tee "$RUNNER_TEMP/build-settings.txt"
 
       - name: Archive
@@ -102,8 +272,10 @@ jobs:
             DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
             PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_IDENTIFIER" \
             CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
-            CODE_SIGN_STYLE=Automatic \
+            CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="Apple Distribution" \
+            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
+            OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH" \
             | tee "$RUNNER_TEMP/archive.log"
 
       - name: Export IPA
@@ -121,8 +293,13 @@ jobs:
             <string>export</string>
             <key>method</key>
             <string>${method}</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>${BUNDLE_IDENTIFIER}</key>
+              <string>${PROFILE_NAME}</string>
+            </dict>
             <key>signingStyle</key>
-            <string>automatic</string>
+            <string>manual</string>
             <key>teamID</key>
             <string>${APPLE_TEAM_ID}</string>
             <key>manageAppVersionAndBuildNumber</key>
@@ -188,3 +365,63 @@ jobs:
             ${{ runner.temp }}/build-settings.txt
             ${{ runner.temp }}/export/*.ipa
           if-no-files-found: ignore
+
+      - name: Clean up temporary signing assets
+        if: always()
+        run: |
+          set +e
+          SIGNING_DIR="$RUNNER_TEMP/signing"
+          RESOURCES_JSON="$SIGNING_DIR/appstore-signing-resources.json"
+
+          if [ -f "$RESOURCES_JSON" ]; then
+            python3 -m pip install --user --quiet pyjwt cryptography requests
+            python3 - <<'PY'
+            import json
+            import os
+            import time
+            from pathlib import Path
+
+            import jwt
+            import requests
+
+            resources_path = Path(os.environ["RUNNER_TEMP"]) / "signing" / "appstore-signing-resources.json"
+            if not resources_path.exists():
+                raise SystemExit(0)
+
+            resources = json.loads(resources_path.read_text() or "{}")
+            key_id = os.environ["ASC_KEY_ID"]
+            issuer_id = os.environ["ASC_ISSUER_ID"]
+            private_key = (Path(os.environ["RUNNER_TEMP"]) / "appstoreconnect" / f"AuthKey_{key_id}.p8").read_text()
+            base_url = "https://api.appstoreconnect.apple.com/v1"
+
+            def token():
+                now = int(time.time())
+                return jwt.encode(
+                    {"iss": issuer_id, "iat": now, "exp": now + 1200, "aud": "appstoreconnect-v1"},
+                    private_key,
+                    algorithm="ES256",
+                    headers={"kid": key_id, "typ": "JWT"},
+                )
+
+            def delete(path):
+                response = requests.delete(
+                    base_url + path,
+                    headers={"Authorization": "Bearer " + token()},
+                    timeout=120,
+                )
+                print(f"DELETE {path}: {response.status_code}")
+
+            if resources.get("profileId"):
+                delete(f"/profiles/{resources['profileId']}")
+            if resources.get("certificateId"):
+                delete(f"/certificates/{resources['certificateId']}")
+            PY
+          fi
+
+          if [ -n "${KEYCHAIN_PATH:-}" ]; then
+            security delete-keychain "$KEYCHAIN_PATH"
+          fi
+
+          if [ -n "${PROFILE_UUID:-}" ]; then
+            rm -f "$HOME/Library/MobileDevice/Provisioning Profiles/$PROFILE_UUID.mobileprovision"
+          fi
