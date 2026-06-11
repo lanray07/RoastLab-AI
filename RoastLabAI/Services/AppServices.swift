@@ -371,22 +371,45 @@ final class SubscriptionStore: ObservableObject {
     @Published var isActive = false
     @Published var storeError: String?
 
-    let productIdentifiers: Set<String> = [
-        "roastlab.roastpro.monthly",
-        "roastlab.roastpro.yearly",
-        "roastlab.creatorpro.monthly"
-    ]
+    let productIdentifiers = Set(SubscriptionPlan.paidPlans.compactMap(\.productIdentifier))
 
     func refreshProducts() async {
         do {
-            products = try await Product.products(for: productIdentifiers)
+            storeError = nil
+            let fetchedProducts = try await Product.products(for: productIdentifiers)
+            products = fetchedProducts.sorted { lhs, rhs in
+                productSortIndex(lhs.id) < productSortIndex(rhs.id)
+            }
+            if products.isEmpty {
+                storeError = "Subscriptions are temporarily unavailable. Please try again."
+            }
             await syncEntitlements()
         } catch {
             storeError = error.localizedDescription
         }
     }
 
+    func product(for plan: SubscriptionPlan) -> Product? {
+        guard let identifier = plan.productIdentifier else { return nil }
+        return products.first { $0.id == identifier }
+    }
+
+    func purchase(plan: SubscriptionPlan) async throws {
+        if products.isEmpty {
+            await refreshProducts()
+        }
+
+        guard let product = product(for: plan) else {
+            let message = "This subscription is not available from the App Store yet. Please try again."
+            storeError = message
+            throw RoastLabError.remoteServiceUnavailable
+        }
+
+        try await purchase(product)
+    }
+
     func purchase(_ product: Product) async throws {
+        storeError = nil
         let result = try await product.purchase()
         switch result {
         case .success(let verification):
@@ -413,17 +436,23 @@ final class SubscriptionStore: ObservableObject {
     }
 
     private func apply(productID: String) {
-        switch productID {
-        case "roastlab.roastpro.monthly":
+        if let identifier = SubscriptionPlan.roastProMonthly.productIdentifier, productID == identifier {
             activePlan = .roastProMonthly
-        case "roastlab.roastpro.yearly":
+        } else if let identifier = SubscriptionPlan.roastProYearly.productIdentifier, productID == identifier {
             activePlan = .roastProYearly
-        case "roastlab.creatorpro.monthly":
+        } else if let identifier = SubscriptionPlan.creatorProMonthly.productIdentifier, productID == identifier {
             activePlan = .creatorProMonthly
-        default:
+        } else {
             activePlan = .free
         }
         isActive = activePlan != .free
+    }
+
+    private func productSortIndex(_ productID: String) -> Int {
+        SubscriptionPlan.paidPlans.firstIndex { plan in
+            guard let planProductID = plan.productIdentifier else { return false }
+            return planProductID == productID
+        } ?? Int.max
     }
 
     private func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {

@@ -85,6 +85,25 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable, Codable {
 
     var id: String { rawValue }
 
+    static let paidPlans: [SubscriptionPlan] = [
+        .roastProMonthly,
+        .roastProYearly,
+        .creatorProMonthly
+    ]
+
+    var productIdentifier: String? {
+        switch self {
+        case .free:
+            nil
+        case .roastProMonthly:
+            "roastlab.roastpro.monthly"
+        case .roastProYearly:
+            "roastlab.roastpro.yearly"
+        case .creatorProMonthly:
+            "roastlab.creatorpro.monthly"
+        }
+    }
+
     var displayName: String {
         switch self {
         case .free: "Free"

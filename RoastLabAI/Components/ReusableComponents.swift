@@ -304,6 +304,7 @@ struct PaywallView: View {
 private struct PaywallContent: View {
     @ObservedObject var store: SubscriptionStore
     @State private var selectedPlan: SubscriptionPlan = .roastProMonthly
+    @State private var isPurchasing = false
 
     var body: some View {
         RoastLabBackground {
@@ -322,42 +323,45 @@ private struct PaywallContent: View {
 
                     AchievementShelfView(unlockedCount: 4)
 
-                    ForEach([SubscriptionPlan.roastProMonthly, .roastProYearly, .creatorProMonthly]) { plan in
-                        PlanRow(plan: plan, isSelected: selectedPlan == plan) {
+                    ForEach(SubscriptionPlan.paidPlans) { plan in
+                        PlanRow(plan: plan, price: priceText(for: plan), isSelected: selectedPlan == plan) {
                             selectedPlan = plan
                         }
                     }
 
                     NeonButton(
-                        title: "Start \(selectedPlan.displayName)",
-                        systemImage: "sparkles",
-                        tint: RoastLabTheme.acidGreen
+                        title: purchaseButtonTitle,
+                        systemImage: "cart.fill",
+                        tint: RoastLabTheme.acidGreen,
+                        isLoading: isPurchasing
                     ) {
-                        store.activateMock(plan: selectedPlan)
+                        Task {
+                            await purchaseSelectedPlan()
+                        }
                     }
 
-                    if !store.products.isEmpty {
+                    if store.isActive {
                         GlassPanel {
-                            VStack(alignment: .leading, spacing: 12) {
-                                SectionHeader(title: "StoreKit 2 Products", subtitle: "Live products appear here once configured in App Store Connect.", systemImage: "cart.fill")
-                                ForEach(store.products, id: \.id) { product in
-                                    Button {
-                                        Task { try? await store.purchase(product) }
-                                    } label: {
-                                        HStack {
-                                            Text(product.displayName)
-                                            Spacer()
-                                            Text(product.displayPrice)
-                                        }
-                                        .font(.callout.weight(.bold))
-                                        .foregroundStyle(.white)
-                                    }
-                                }
+                            Label("Unlocked: \(store.activePlan.displayName)", systemImage: "checkmark.seal.fill")
+                                .font(.callout.weight(.bold))
+                                .foregroundStyle(RoastLabTheme.acidGreen)
+                        }
+                    }
+
+                    if let storeError = store.storeError {
+                        GlassPanel {
+                            HStack(alignment: .top, spacing: 10) {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundStyle(RoastLabTheme.warning)
+                                Text(storeError)
+                                    .font(.footnote.weight(.semibold))
+                                    .foregroundStyle(RoastLabTheme.textSecondary)
+                                    .fixedSize(horizontal: false, vertical: true)
                             }
                         }
                     }
 
-                    Text("Mock activation stays available for local development. Live StoreKit products load from App Store Connect when available.")
+                    Text("Purchases are processed securely by Apple. You can manage or cancel subscriptions in your App Store account settings.")
                         .font(.footnote)
                         .foregroundStyle(RoastLabTheme.textSecondary)
                         .multilineTextAlignment(.center)
@@ -372,10 +376,39 @@ private struct PaywallContent: View {
             await store.refreshProducts()
         }
     }
+
+    private var purchaseButtonTitle: String {
+        if isPurchasing {
+            "Opening App Store"
+        } else if store.product(for: selectedPlan) == nil {
+            "Load \(selectedPlan.displayName)"
+        } else {
+            "Start \(selectedPlan.displayName)"
+        }
+    }
+
+    private func priceText(for plan: SubscriptionPlan) -> String {
+        store.product(for: plan)?.displayPrice ?? plan.pricePlaceholder
+    }
+
+    private func purchaseSelectedPlan() async {
+        guard !isPurchasing else { return }
+        isPurchasing = true
+        defer { isPurchasing = false }
+
+        do {
+            try await store.purchase(plan: selectedPlan)
+        } catch {
+            if store.storeError == nil {
+                store.storeError = error.localizedDescription
+            }
+        }
+    }
 }
 
 private struct PlanRow: View {
     var plan: SubscriptionPlan
+    var price: String
     var isSelected: Bool
     var action: () -> Void
 
@@ -389,7 +422,7 @@ private struct PlanRow: View {
                             Text(plan.displayName)
                                 .font(.headline.weight(.black))
                                 .foregroundStyle(.white)
-                            Text(plan.pricePlaceholder)
+                            Text(price)
                                 .font(.title3.weight(.black))
                                 .foregroundStyle(RoastLabTheme.hotPink)
                         }
