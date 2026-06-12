@@ -370,6 +370,7 @@ final class SubscriptionStore: ObservableObject {
     @Published var activePlan: SubscriptionPlan = .free
     @Published var isActive = false
     @Published var storeError: String?
+    @Published var restoreMessage: String?
 
     let productIdentifiers = Set(SubscriptionPlan.paidPlans.compactMap(\.productIdentifier))
 
@@ -410,6 +411,7 @@ final class SubscriptionStore: ObservableObject {
 
     func purchase(_ product: Product) async throws {
         storeError = nil
+        restoreMessage = nil
         let result = try await product.purchase()
         switch result {
         case .success(let verification):
@@ -423,10 +425,29 @@ final class SubscriptionStore: ObservableObject {
         }
     }
 
+    func restorePurchases() async {
+        storeError = nil
+        restoreMessage = nil
+
+        do {
+            try await AppStore.sync()
+            await syncEntitlements()
+            restoreMessage = isActive ? "Purchases restored." : "No active purchases were found for this Apple ID."
+        } catch {
+            storeError = error.localizedDescription
+        }
+    }
+
     func syncEntitlements() async {
+        var foundEntitlement = false
         for await result in Transaction.currentEntitlements {
             guard let transaction = try? checkVerified(result) else { continue }
+            foundEntitlement = true
             apply(productID: transaction.productID)
+        }
+        if !foundEntitlement {
+            activePlan = .free
+            isActive = false
         }
     }
 

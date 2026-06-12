@@ -122,6 +122,28 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable, Codable {
         }
     }
 
+    var subscriptionLength: String {
+        switch self {
+        case .free:
+            "No subscription"
+        case .roastProMonthly, .creatorProMonthly:
+            "1 month"
+        case .roastProYearly:
+            "1 year"
+        }
+    }
+
+    var billingUnit: String {
+        switch self {
+        case .free:
+            "free plan"
+        case .roastProMonthly, .creatorProMonthly:
+            "month"
+        case .roastProYearly:
+            "year"
+        }
+    }
+
     var includedFeatures: [String] {
         switch self {
         case .free:

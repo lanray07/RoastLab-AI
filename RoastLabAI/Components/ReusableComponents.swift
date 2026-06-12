@@ -305,6 +305,7 @@ private struct PaywallContent: View {
     @ObservedObject var store: SubscriptionStore
     @State private var selectedPlan: SubscriptionPlan = .roastProMonthly
     @State private var isPurchasing = false
+    @State private var isRestoring = false
 
     var body: some View {
         RoastLabBackground {
@@ -340,10 +341,24 @@ private struct PaywallContent: View {
                         }
                     }
 
+                    RestorePurchasesButton(isRestoring: isRestoring) {
+                        Task {
+                            await restorePurchases()
+                        }
+                    }
+
                     if store.isActive {
                         GlassPanel {
                             Label("Unlocked: \(store.activePlan.displayName)", systemImage: "checkmark.seal.fill")
                                 .font(.callout.weight(.bold))
+                                .foregroundStyle(RoastLabTheme.acidGreen)
+                        }
+                    }
+
+                    if let restoreMessage = store.restoreMessage {
+                        GlassPanel {
+                            Label(restoreMessage, systemImage: "arrow.clockwise.circle.fill")
+                                .font(.footnote.weight(.semibold))
                                 .foregroundStyle(RoastLabTheme.acidGreen)
                         }
                     }
@@ -360,6 +375,8 @@ private struct PaywallContent: View {
                             }
                         }
                     }
+
+                    SubscriptionLegalPanel(plan: selectedPlan, price: priceText(for: selectedPlan))
 
                     Text("Purchases are processed securely by Apple. You can manage or cancel subscriptions in your App Store account settings.")
                         .font(.footnote)
@@ -404,6 +421,14 @@ private struct PaywallContent: View {
             }
         }
     }
+
+    private func restorePurchases() async {
+        guard !isRestoring else { return }
+        isRestoring = true
+        defer { isRestoring = false }
+
+        await store.restorePurchases()
+    }
 }
 
 private struct PlanRow: View {
@@ -425,6 +450,9 @@ private struct PlanRow: View {
                             Text(price)
                                 .font(.title3.weight(.black))
                                 .foregroundStyle(RoastLabTheme.hotPink)
+                            Text("\(plan.subscriptionLength) subscription, \(price) per \(plan.billingUnit)")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(RoastLabTheme.textSecondary)
                         }
                         Spacer()
                         Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
@@ -442,6 +470,75 @@ private struct PlanRow: View {
         }
         .buttonStyle(.plain)
     }
+}
+
+private struct RestorePurchasesButton: View {
+    var isRestoring: Bool
+    var action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                if isRestoring {
+                    ProgressView()
+                        .tint(.white)
+                } else {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.headline)
+                }
+                Text(isRestoring ? "Restoring Purchases" : "Restore Purchases")
+                    .font(.headline.weight(.bold))
+            }
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
+            .padding(.horizontal, 16)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Color.white.opacity(0.1))
+                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Color.white.opacity(0.18)))
+            )
+        }
+        .buttonStyle(.plain)
+        .disabled(isRestoring)
+    }
+}
+
+private struct SubscriptionLegalPanel: View {
+    var plan: SubscriptionPlan
+    var price: String
+
+    var body: some View {
+        GlassPanel {
+            VStack(alignment: .leading, spacing: 12) {
+                SectionHeader(
+                    title: "Subscription Terms",
+                    subtitle: "\(plan.displayName) renews every \(plan.subscriptionLength) at \(price) per \(plan.billingUnit) until cancelled.",
+                    systemImage: "doc.text.fill"
+                )
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Label(plan.displayName, systemImage: "crown.fill")
+                    Label("Length: \(plan.subscriptionLength)", systemImage: "calendar")
+                    Label("Price: \(price) per \(plan.billingUnit)", systemImage: "tag.fill")
+                }
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(RoastLabTheme.textSecondary)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Link("Terms of Use (EULA)", destination: LegalLinks.termsOfUse)
+                    Link("Privacy Policy", destination: LegalLinks.privacyPolicy)
+                }
+                .font(.footnote.weight(.bold))
+                .foregroundStyle(RoastLabTheme.acidGreen)
+            }
+        }
+    }
+}
+
+private enum LegalLinks {
+    static let termsOfUse = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
+    static let privacyPolicy = URL(string: "https://github.com/lanray07/RoastLab-AI/blob/main/PRIVACY.md")!
 }
 
 private extension SubscriptionPlan {
