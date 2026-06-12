@@ -915,7 +915,7 @@ struct SettingsView: View {
                         VStack(alignment: .leading, spacing: 12) {
                             SectionHeader(title: "Safety Guidelines", subtitle: "Comedic roasts only. No hate speech, harassment, threats, sexual abuse content, protected-class attacks, bullying minors, self-harm, or extremist content.", systemImage: "checkmark.shield.fill")
                             Link("Privacy Policy", destination: URL(string: "https://github.com/lanray07/RoastLab-AI/blob/main/PRIVACY.md")!)
-                            Link("Terms of Use", destination: URL(string: "https://github.com/lanray07/RoastLab-AI")!)
+                            Link("Terms of Use (EULA)", destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!)
                         }
                         .foregroundStyle(RoastLabTheme.electricBlue)
                     }
