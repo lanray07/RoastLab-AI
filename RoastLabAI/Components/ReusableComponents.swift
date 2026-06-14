@@ -384,7 +384,7 @@ private struct PaywallContent: View {
                         .multilineTextAlignment(.center)
                         .padding(.bottom, 28)
                 }
-                .padding(20)
+                .roastLabPage(maxWidth: RoastLabLayout.compactMaxWidth)
             }
         }
         .navigationTitle("Paywall")

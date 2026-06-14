@@ -294,7 +294,7 @@ struct MockAIService: RoastAIClient {
         case RoastRequestType.creator.rawValue:
             return RoastAIResponse(
                 roast: """
-                TikTok script
+                Short video script
                 Hook: Upload anything. Get roasted instantly.
                 Beat 1: Show the prompt like it owes you rent.
                 Beat 2: RoastLab AI delivers a clean uppercut of absurdity.
@@ -303,7 +303,7 @@ struct MockAIService: RoastAIClient {
                 """,
                 clapback: nil,
                 battle: nil,
-                funnyObservations: ["Shorts-ready structure.", "Fast hook.", "Ends with a shareable moment."]
+                funnyObservations: ["Short-form structure.", "Fast hook.", "Ends with a shareable moment."]
             )
         case RoastRequestType.workplace.rawValue:
             return RoastAIResponse(

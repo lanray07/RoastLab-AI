@@ -29,7 +29,7 @@
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>RoastLab AI can save share cards and meme outputs to your photo library.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>RoastLab AI reads selected photos so mock image analysis can generate safe comedy observations.</string>
+	<string>RoastLab AI reads selected photos locally for safe comedy prompts and does not perform face recognition.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>RoastLab AI transcribes voice prompts into editable text for voice roasts.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>

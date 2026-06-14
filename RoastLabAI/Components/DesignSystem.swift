@@ -21,6 +21,20 @@ enum RoastLabTheme {
     }
 }
 
+enum RoastLabLayout {
+    static let readableMaxWidth: CGFloat = 860
+    static let compactMaxWidth: CGFloat = 760
+    static let wideMaxWidth: CGFloat = 980
+}
+
+extension View {
+    func roastLabPage(maxWidth: CGFloat = RoastLabLayout.readableMaxWidth, padding: CGFloat = 20) -> some View {
+        frame(maxWidth: maxWidth, alignment: .leading)
+            .padding(padding)
+            .frame(maxWidth: .infinity)
+    }
+}
+
 struct RoastLabBackground<Content: View>: View {
     let content: Content
 

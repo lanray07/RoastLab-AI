@@ -23,6 +23,12 @@ You can decline these permissions and continue using other parts of the app. You
 
 RoastLab AI may save preferences, generated roasts, transcripts, clapbacks, roast battles, personas, analytics-style usage counts, and subscription state locally on your device. You can delete local app data from inside the app where available, or by removing the app from your device.
 
+## Photos and Face Data
+
+RoastLab AI does not use face recognition, face detection, facial mapping, facial geometry, or biometric identification. When you select or capture a photo, the current App Store build processes the image locally on your device only to confirm the image can be opened and to read basic image dimensions and orientation for a generic comedy prompt.
+
+RoastLab AI does not collect, create, store, transmit, share, sell, or retain face data, faceprints, face templates, facial landmarks, facial geometry, biometric identifiers, or any data derived from a person's face. Selected photos are not uploaded to a RoastLab AI server in the current build. Temporary photo data used for the on-screen preview and local prompt is replaced when you choose another image, cleared when the app session ends, or removed when you delete the app. Generated text saved locally can be deleted from inside the app where available, or by removing the app from your device.
+
 ## Subscriptions
 
 RoastLab AI uses Apple's StoreKit for subscriptions. Subscription purchase and billing information is handled by Apple. RoastLab AI uses StoreKit subscription status only to unlock premium features in the app.

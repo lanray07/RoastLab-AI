@@ -73,7 +73,7 @@ struct OnboardingView: View {
                     }
                     .padding(.bottom, 28)
                 }
-                .padding(20)
+                .roastLabPage(maxWidth: RoastLabLayout.compactMaxWidth)
             }
         }
     }
@@ -107,7 +107,7 @@ struct DashboardView: View {
     @Query(sort: \VoiceTranscript.createdAt, order: .reverse) private var voices: [VoiceTranscript]
 
     private let dashboardModel = DashboardViewModel()
-    private let grid = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
+    private let grid = [GridItem(.adaptive(minimum: 150, maximum: 240), spacing: 12)]
 
     var body: some View {
         RoastLabBackground {
@@ -136,8 +136,8 @@ struct DashboardView: View {
 
                     SectionHeader(title: "Quick Actions", subtitle: "Jump straight into the roast lab.", systemImage: "wand.and.stars")
                     LazyVGrid(columns: grid, spacing: 12) {
-                        quickAction("Roast Photo", "Selfies, groups, profile shots", "camera.fill", RoastLabTheme.hotPink, .photoRoast)
-                        quickAction("Roast Bio", "Dating, LinkedIn, socials", "text.quote", RoastLabTheme.electricBlue, .bioRoast)
+                        quickAction("Roast Photo", "Photos and group shots", "camera.fill", RoastLabTheme.hotPink, .photoRoast)
+                        quickAction("Roast Bio", "Profiles and intros", "text.quote", RoastLabTheme.electricBlue, .bioRoast)
                         quickAction("Voice Roast", "Record stories and situations", "waveform", RoastLabTheme.neonPurple, .voiceRoast)
                         quickAction("Roast Battle", "Two names enter", "person.2.fill", RoastLabTheme.warning, .roastBattle)
                         quickAction("Clapback", "Replies for trolls and banter", "bolt.fill", RoastLabTheme.acidGreen, .clapback)
@@ -167,7 +167,7 @@ struct DashboardView: View {
                         }
                     }
                 }
-                .padding(20)
+                .roastLabPage(maxWidth: RoastLabLayout.wideMaxWidth)
             }
         }
         .navigationTitle("Dashboard")
@@ -184,8 +184,8 @@ struct DashboardView: View {
 
 struct CreateHubView: View {
     private let modules: [(title: String, subtitle: String, icon: String, tint: Color, route: AppRoute)] = [
-        ("Photo Roast", "Upload profile photos and social screenshots.", "camera.fill", RoastLabTheme.hotPink, .photoRoast),
-        ("Bio Roast", "Roast Tinder, Instagram, LinkedIn, or X bios.", "text.quote", RoastLabTheme.electricBlue, .bioRoast),
+        ("Photo Roast", "Upload photos for playful prompts.", "camera.fill", RoastLabTheme.hotPink, .photoRoast),
+        ("Bio Roast", "Roast dating bios, profiles, or intros.", "text.quote", RoastLabTheme.electricBlue, .bioRoast),
         ("Voice Roast", "Speak, transcribe, edit, and generate.", "waveform", RoastLabTheme.neonPurple, .voiceRoast),
         ("Roast Battle", "Generate comeback chains and winner scores.", "person.2.fill", RoastLabTheme.warning, .roastBattle),
         ("Clapback", "Witty responses for friendly banter.", "bolt.fill", RoastLabTheme.acidGreen, .clapback),
@@ -194,7 +194,7 @@ struct CreateHubView: View {
         ("Share Cards", "Export roast, meme, and battle cards.", "square.and.arrow.up.fill", RoastLabTheme.acidGreen, .shareCards)
     ]
 
-    private let grid = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
+    private let grid = [GridItem(.adaptive(minimum: 170, maximum: 260), spacing: 12)]
 
     var body: some View {
         RoastLabBackground {
@@ -233,7 +233,7 @@ struct CreateHubView: View {
                     }
                     .buttonStyle(.plain)
                 }
-                .padding(20)
+                .roastLabPage(maxWidth: RoastLabLayout.wideMaxWidth)
             }
         }
         .navigationTitle("Create")
@@ -255,7 +255,7 @@ struct PhotoRoastGeneratorView: View {
     @State private var sharePayload: SharePayload?
 
     var body: some View {
-        generatorScreen(title: "Photo Roast", subtitle: "Selfies, profile photos, group shots, and social images.") {
+        generatorScreen(title: "Photo Roast", subtitle: "Photos, group shots, saved images, and visual prompts.") {
             PhotosPicker(selection: $selectedPhoto, matching: .images) {
                 GlassPanel {
                     VStack(spacing: 14) {
@@ -268,8 +268,8 @@ struct PhotoRoastGeneratorView: View {
                                 .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                         } else {
                             PremiumEmptyStateView(
-                                title: "No victims selected yet.",
-                                message: "Add a selfie, group shot, or social screenshot and the committee will warm up.",
+                                title: "No photo selected yet.",
+                                message: "Add a photo, group shot, or saved image and the committee will warm up.",
                                 mascot: .memeGoblin,
                                 scene: .socialHumor,
                                 framed: false
@@ -366,7 +366,7 @@ struct BioRoastGeneratorView: View {
     @State private var sharePayload: SharePayload?
 
     var body: some View {
-        generatorScreen(title: "Bio Roast", subtitle: "Dating profiles, Instagram bios, LinkedIn summaries, and X intros.") {
+        generatorScreen(title: "Bio Roast", subtitle: "Dating profiles, creator bios, professional summaries, and short intros.") {
             promptEditor(title: "Bio", text: $bio, height: 150)
             StyleIntensityControls(style: $style, intensity: $intensity)
 
@@ -673,14 +673,14 @@ struct CreatorStudioView: View {
     @EnvironmentObject private var services: AppServices
     @Environment(\.modelContext) private var modelContext
     @StateObject private var generator = GenerationViewModel()
-    @State private var brief = "Turn a funny roast about overconfident productivity habits into a TikTok script."
+    @State private var brief = "Turn a funny roast about overconfident productivity habits into a short video script."
     @State private var style: HumorStyle = .witty
     @State private var intensity: RoastIntensity = .spicy
     @State private var sharePayload: SharePayload?
 
     var body: some View {
-        generatorScreen(title: "Creator Studio", subtitle: "TikTok scripts, roast videos, YouTube Shorts ideas, funny skits, and stand-up jokes.") {
-            HStack(spacing: 10) {
+        generatorScreen(title: "Creator Studio", subtitle: "Short video scripts, roast videos, funny skits, captions, and stand-up jokes.") {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 170, maximum: 260), spacing: 10)], spacing: 10) {
                 NavigationLink(value: AppRoute.shareCards) {
                     QuickActionTile(title: "Share Cards", subtitle: "Export roast visuals", systemImage: "square.and.arrow.up.fill", tint: RoastLabTheme.acidGreen)
                 }
@@ -740,7 +740,7 @@ struct PersonalityProfilesView: View {
                         EmptyStateView(title: "Profiles loading", message: "Default comedy personas are being seeded locally.", systemImage: "lock.open.fill")
                     }
                 }
-                .padding(20)
+                .roastLabPage()
             }
         }
         .navigationTitle("Personas")
@@ -778,14 +778,14 @@ struct AnalyticsDashboardView: View {
                     AnalyticsChartCard(title: "Content Mix", points: points)
                     AchievementShelfView(unlockedCount: roasts.count + clapbacks.count + battles.count + voices.count)
 
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 170, maximum: 260), spacing: 12)], spacing: 12) {
                         MetricTile(title: "Most used style", value: profiles.first?.resolvedHumorStyle.displayName ?? "Playful", systemImage: "paintpalette.fill", tint: RoastLabTheme.hotPink)
                         MetricTile(title: "Share rate", value: roasts.isEmpty ? "0%" : "68%", systemImage: "arrowshape.turn.up.right.fill", tint: RoastLabTheme.acidGreen)
                         MetricTile(title: "Funniest content", value: roasts.first?.resolvedType.displayName ?? "Sample", systemImage: "star.fill", tint: RoastLabTheme.warning)
                         MetricTile(title: "Total outputs", value: "\(roasts.count + clapbacks.count + battles.count + voices.count)", systemImage: "sparkles", tint: RoastLabTheme.electricBlue)
                     }
                 }
-                .padding(20)
+                .roastLabPage()
             }
         }
         .navigationTitle("Analytics")
@@ -803,7 +803,7 @@ struct ShareCardsView: View {
         RoastLabBackground {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    SectionHeader(title: "Share Cards", subtitle: "Optimized for TikTok, Instagram, X, and WhatsApp.", systemImage: "square.and.arrow.up.fill")
+                    SectionHeader(title: "Share Cards", subtitle: "Optimized for messages, group chats, and short-form posts.", systemImage: "square.and.arrow.up.fill")
                     ReactionRailView(reactions: [.laughing, .shocked, .cryingWithLaughter, .savage, .applause])
 
                     if let roast = roasts.first {
@@ -825,7 +825,7 @@ struct ShareCardsView: View {
                         RoastBattleCard(participantA: battle.participantA, participantB: battle.participantB, battle: battle.generatedBattle)
                     }
                 }
-                .padding(20)
+                .roastLabPage()
             }
         }
         .navigationTitle("Share Cards")
@@ -941,7 +941,7 @@ struct SettingsView: View {
                             .background(RoundedRectangle(cornerRadius: 16).fill(Color.white.opacity(0.08)))
                     }
                 }
-                .padding(20)
+                .roastLabPage()
             }
         }
         .navigationTitle("Settings")
@@ -1000,7 +1000,7 @@ private func generatorScreen<Content: View>(title: String, subtitle: String, @Vi
                 HumanizedSceneIllustration(scene: sceneForTitle(title), height: 176)
                 content()
             }
-            .padding(20)
+            .roastLabPage()
         }
     }
     .navigationTitle(title)
@@ -1128,7 +1128,7 @@ private func placeholderScreen(title: String, subtitle: String, icon: String, ro
                     }
                 }
             }
-            .padding(20)
+            .roastLabPage()
         }
     }
     .navigationTitle(title)
