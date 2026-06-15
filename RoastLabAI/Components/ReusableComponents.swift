@@ -303,39 +303,36 @@ struct PaywallView: View {
 
 private struct PaywallContent: View {
     @ObservedObject var store: SubscriptionStore
-    @State private var selectedPlan: SubscriptionPlan = .roastProMonthly
-    @State private var isPurchasing = false
     @State private var isRestoring = false
+
+    private var productIDs: [String] {
+        SubscriptionPlan.paidPlans.compactMap(\.productIdentifier)
+    }
 
     var body: some View {
         RoastLabBackground {
             ScrollView {
-                VStack(spacing: 22) {
-                    ComedyHeroStageView(
+                VStack(alignment: .leading, spacing: 16) {
+                    SectionHeader(
                         title: "RoastLab Pro",
-                        subtitle: "Unlimited roasts, battles, voice tools, share cards, and creator exports.",
-                        kicker: "Premium comedy membership",
-                        mascot: .savageQueen,
-                        theme: .neonRoast,
-                        compact: true
+                        subtitle: "Choose a plan using Apple's secure purchase flow.",
+                        systemImage: "crown.fill"
                     )
-                    .padding(.top, 16)
+                    .padding(.top, 12)
 
-                    ForEach(SubscriptionPlan.paidPlans) { plan in
-                        PlanRow(plan: plan, price: priceText(for: plan), isSelected: selectedPlan == plan) {
-                            selectedPlan = plan
+                    SubscriptionStoreView(productIDs: productIDs) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Label("Unlimited roasts", systemImage: "flame.fill")
+                            Label("Voice, battle, and creator tools", systemImage: "wand.and.stars")
+                            Label("Share-ready comedy cards", systemImage: "square.and.arrow.up.fill")
                         }
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-
-                    NeonButton(
-                        title: purchaseButtonTitle,
-                        systemImage: "cart.fill",
-                        tint: RoastLabTheme.acidGreen,
-                        isLoading: isPurchasing
-                    ) {
-                        Task {
-                            await purchaseSelectedPlan()
-                        }
+                    .subscriptionStoreControlStyle(.buttons)
+                    .onInAppPurchaseCompletion { _, _ in
+                        Task { await store.syncEntitlements() }
                     }
 
                     RestorePurchasesButton(isRestoring: isRestoring) {
@@ -373,7 +370,7 @@ private struct PaywallContent: View {
                         }
                     }
 
-                    SubscriptionLegalPanel(plan: selectedPlan, price: priceText(for: selectedPlan))
+                    SubscriptionLegalPanel()
 
                     Text("Purchases are processed securely by Apple. You can manage or cancel subscriptions in your App Store account settings.")
                         .font(.footnote)
@@ -384,38 +381,10 @@ private struct PaywallContent: View {
                 .roastLabPage(maxWidth: RoastLabLayout.compactMaxWidth)
             }
         }
-        .navigationTitle("Paywall")
+        .navigationTitle("RoastLab Pro")
         .navigationBarTitleDisplayMode(.inline)
         .task {
             await store.refreshProducts()
-        }
-    }
-
-    private var purchaseButtonTitle: String {
-        if isPurchasing {
-            "Opening App Store"
-        } else if store.product(for: selectedPlan) == nil {
-            "Load \(selectedPlan.displayName)"
-        } else {
-            "Start \(selectedPlan.displayName)"
-        }
-    }
-
-    private func priceText(for plan: SubscriptionPlan) -> String {
-        store.product(for: plan)?.displayPrice ?? plan.pricePlaceholder
-    }
-
-    private func purchaseSelectedPlan() async {
-        guard !isPurchasing else { return }
-        isPurchasing = true
-        defer { isPurchasing = false }
-
-        do {
-            try await store.purchase(plan: selectedPlan)
-        } catch {
-            if store.storeError == nil {
-                store.storeError = error.localizedDescription
-            }
         }
     }
 
@@ -502,25 +471,12 @@ private struct RestorePurchasesButton: View {
 }
 
 private struct SubscriptionLegalPanel: View {
-    var plan: SubscriptionPlan
-    var price: String
-
     var body: some View {
         GlassPanel {
             VStack(alignment: .leading, spacing: 12) {
-                SectionHeader(
-                    title: "Subscription Terms",
-                    subtitle: "\(plan.displayName) renews every \(plan.subscriptionLength) at \(price) per \(plan.billingUnit) until cancelled.",
-                    systemImage: "doc.text.fill"
-                )
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Label(plan.displayName, systemImage: "crown.fill")
-                    Label("Length: \(plan.subscriptionLength)", systemImage: "calendar")
-                    Label("Price: \(price) per \(plan.billingUnit)", systemImage: "tag.fill")
-                }
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(RoastLabTheme.textSecondary)
+                Text("Subscriptions renew automatically until cancelled.")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(RoastLabTheme.textSecondary)
 
                 VStack(alignment: .leading, spacing: 8) {
                     Link("Terms of Use (EULA)", destination: LegalLinks.termsOfUse)

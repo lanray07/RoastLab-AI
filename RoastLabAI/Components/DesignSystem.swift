@@ -141,13 +141,13 @@ struct SectionHeader: View {
                             .foregroundStyle(RoastLabTheme.hotPink)
                     }
                     Text(title)
-                        .font(.title3.weight(.bold))
+                        .font(.headline.weight(.bold))
                         .foregroundStyle(RoastLabTheme.textPrimary)
                 }
 
                 if let subtitle {
                     Text(subtitle)
-                        .font(.subheadline)
+                        .font(.caption)
                         .foregroundStyle(RoastLabTheme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -232,13 +232,13 @@ struct ActionRow: View {
     var tint: Color
 
     var body: some View {
-        GlassPanel(padding: 14) {
-            HStack(spacing: 14) {
+        GlassPanel(padding: 12) {
+            HStack(spacing: 12) {
                 Image(systemName: systemImage)
                     .font(.headline.weight(.bold))
                     .foregroundStyle(.black)
-                    .frame(width: 42, height: 42)
-                    .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(tint))
+                    .frame(width: 38, height: 38)
+                    .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(tint))
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
@@ -249,7 +249,7 @@ struct ActionRow: View {
                     Text(subtitle)
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(RoastLabTheme.textSecondary)
-                        .lineLimit(2)
+                        .lineLimit(1)
                 }
 
                 Spacer(minLength: 0)
@@ -257,7 +257,7 @@ struct ActionRow: View {
                     .font(.caption.weight(.bold))
                     .foregroundStyle(RoastLabTheme.textSecondary)
             }
-            .frame(maxWidth: .infinity, minHeight: 50, alignment: .leading)
+            .frame(maxWidth: .infinity, minHeight: 46, alignment: .leading)
         }
     }
 }
@@ -322,25 +322,41 @@ struct StyleIntensityControls: View {
     var includeIntensity = true
 
     var body: some View {
-        GlassPanel {
-            VStack(alignment: .leading, spacing: 14) {
-                Picker("Humor style", selection: $style) {
-                    ForEach(HumorStyle.allCases) { style in
-                        Text(style.displayName).tag(style)
-                    }
-                }
-                .pickerStyle(.menu)
-                .tint(.white)
-
-                if includeIntensity {
-                    Picker("Roast intensity", selection: $intensity) {
-                        ForEach(RoastIntensity.allCases) { intensity in
-                            Text(intensity.displayName).tag(intensity)
+        GlassPanel(padding: 12) {
+            VStack(spacing: 10) {
+                LabeledContent {
+                    Picker("Humor style", selection: $style) {
+                        ForEach(HumorStyle.allCases) { style in
+                            Text(style.displayName).tag(style)
                         }
                     }
-                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .pickerStyle(.menu)
+                    .tint(.white)
+                } label: {
+                    Label("Style", systemImage: "paintpalette.fill")
+                        .foregroundStyle(.white)
+                }
+
+                if includeIntensity {
+                    Divider().overlay(Color.white.opacity(0.12))
+
+                    LabeledContent {
+                        Picker("Roast intensity", selection: $intensity) {
+                            ForEach(RoastIntensity.allCases) { intensity in
+                                Text(intensity.displayName).tag(intensity)
+                            }
+                        }
+                        .labelsHidden()
+                        .pickerStyle(.menu)
+                        .tint(.white)
+                    } label: {
+                        Label("Intensity", systemImage: "slider.horizontal.3")
+                            .foregroundStyle(.white)
+                    }
                 }
             }
+            .font(.callout.weight(.semibold))
         }
     }
 }

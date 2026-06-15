@@ -86,43 +86,34 @@ struct OnboardingView: View {
 struct DashboardView: View {
     @EnvironmentObject private var services: AppServices
     @Query(sort: \RoastRequest.createdAt, order: .reverse) private var roasts: [RoastRequest]
-    @Query(sort: \Clapback.createdAt, order: .reverse) private var clapbacks: [Clapback]
-    @Query(sort: \RoastBattle.createdAt, order: .reverse) private var battles: [RoastBattle]
-    @Query(sort: \VoiceTranscript.createdAt, order: .reverse) private var voices: [VoiceTranscript]
-
-    private let dashboardModel = DashboardViewModel()
-    private let metricGrid = [GridItem(.adaptive(minimum: 190, maximum: 260), spacing: 10)]
 
     var body: some View {
         RoastLabBackground {
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    SectionHeader(title: "RoastLab", subtitle: "Choose one task and generate a roast.", systemImage: "flame.fill")
+                VStack(alignment: .leading, spacing: 14) {
+                    SectionHeader(title: "RoastLab", subtitle: "Choose a roast type.", systemImage: "flame.fill")
                         .padding(.top, 8)
 
                     VStack(spacing: 10) {
-                        quickAction("Photo Roast", "Use a selected photo or group shot.", "camera.fill", RoastLabTheme.hotPink, .photoRoast)
-                        quickAction("Bio Roast", "Paste a short intro or profile.", "text.quote", RoastLabTheme.electricBlue, .bioRoast)
-                        quickAction("Voice Roast", "Record or edit a spoken setup.", "waveform", RoastLabTheme.neonPurple, .voiceRoast)
+                        quickAction("Photo Roast", "Use a photo or group shot.", "camera.fill", RoastLabTheme.hotPink, .photoRoast)
+                        quickAction("Bio Roast", "Paste a short profile.", "text.quote", RoastLabTheme.electricBlue, .bioRoast)
+                        quickAction("Voice Roast", "Record or edit a setup.", "waveform", RoastLabTheme.neonPurple, .voiceRoast)
                         quickAction("Clapback", "Write a playful reply.", "bolt.fill", RoastLabTheme.acidGreen, .clapback)
                     }
 
-                    LazyVGrid(columns: metricGrid, spacing: 10) {
-                        MetricStrip(title: "Roast streak", value: "\(dashboardModel.streak(from: roasts.map(\.createdAt)))", systemImage: "flame.fill", tint: RoastLabTheme.hotPink)
-                        MetricStrip(title: "Roast score", value: "\(dashboardModel.roastScore(roasts: roasts.count, clapbacks: clapbacks.count, battles: battles.count, voices: voices.count))", systemImage: "bolt.fill", tint: RoastLabTheme.acidGreen)
-                        MetricStrip(title: "Plan", value: services.subscriptionStore.activePlan == .free ? "Free" : "Pro", systemImage: "crown.fill", tint: RoastLabTheme.warning)
-                    }
+                    quickAction("Roast Battle", "Generate a safe face-off.", "person.2.fill", RoastLabTheme.warning, .roastBattle)
 
-                    SectionHeader(title: "Recent Content", subtitle: nil, systemImage: "clock.fill")
-                    if roasts.isEmpty {
-                        PremiumEmptyStateView(title: "No roasts yet", message: "Start with Photo Roast, Bio Roast, or Voice Roast.", mascot: .friendlyBully, scene: .groupChat, showsScene: false)
-                    } else {
-                        ForEach(Array(roasts.prefix(1))) { roast in
-                            RoastCard(title: roast.resolvedType.displayName, roast: roast.generatedRoast, observations: ["Saved locally", roast.createdAt.formatted(date: .abbreviated, time: .shortened)])
+                    if !roasts.isEmpty {
+                        SectionHeader(title: "Latest Roast", subtitle: nil, systemImage: "clock.fill")
+                        if let roast = roasts.first {
+                            RoastCard(title: roast.resolvedType.displayName, roast: roast.generatedRoast, observations: [roast.createdAt.formatted(date: .abbreviated, time: .shortened)])
                         }
                     }
 
-                    UpgradeBanner(title: "Need more?", message: "Manage Pro tools, restore purchases, and subscription details.")
+                    NavigationLink(value: AppRoute.paywall) {
+                        ActionRow(title: "RoastLab Pro", subtitle: services.subscriptionStore.activePlan == .free ? "Manage subscription." : "Pro is active.", systemImage: "crown.fill", tint: RoastLabTheme.warning)
+                    }
+                    .buttonStyle(.plain)
                 }
                 .roastLabPage(maxWidth: RoastLabLayout.compactMaxWidth)
             }
@@ -141,21 +132,19 @@ struct DashboardView: View {
 
 struct CreateHubView: View {
     private let modules: [(title: String, subtitle: String, icon: String, tint: Color, route: AppRoute)] = [
-        ("Photo Roast", "Upload photos for playful prompts.", "camera.fill", RoastLabTheme.hotPink, .photoRoast),
-        ("Bio Roast", "Roast dating bios, profiles, or intros.", "text.quote", RoastLabTheme.electricBlue, .bioRoast),
-        ("Voice Roast", "Speak, transcribe, edit, and generate.", "waveform", RoastLabTheme.neonPurple, .voiceRoast),
-        ("Roast Battle", "Generate comeback chains and winner scores.", "person.2.fill", RoastLabTheme.warning, .roastBattle),
-        ("Clapback", "Witty responses for friendly banter.", "bolt.fill", RoastLabTheme.acidGreen, .clapback),
-        ("Workplace Safe", "Office-friendly jokes and meeting banter.", "briefcase.fill", RoastLabTheme.electricBlue, .workplaceSafe),
-        ("Meme Generator", "Captions and image ideas.", "photo.on.rectangle.angled", RoastLabTheme.hotPink, .meme),
-        ("Share Cards", "Export roast, meme, and battle cards.", "square.and.arrow.up.fill", RoastLabTheme.acidGreen, .shareCards)
+        ("Photo Roast", "Use photos or group shots.", "camera.fill", RoastLabTheme.hotPink, .photoRoast),
+        ("Bio Roast", "Paste a profile or intro.", "text.quote", RoastLabTheme.electricBlue, .bioRoast),
+        ("Voice Roast", "Speak or edit a setup.", "waveform", RoastLabTheme.neonPurple, .voiceRoast),
+        ("Roast Battle", "Two-person banter mode.", "person.2.fill", RoastLabTheme.warning, .roastBattle),
+        ("Clapback", "Replies for friendly banter.", "bolt.fill", RoastLabTheme.acidGreen, .clapback),
+        ("Creator Studio", "Scripts and captions.", "movieclapper.fill", RoastLabTheme.electricBlue, .creatorStudio)
     ]
 
     var body: some View {
         RoastLabBackground {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    SectionHeader(title: "Create", subtitle: "Pick a generator, add context, and tap generate.", systemImage: "wand.and.stars")
+                    SectionHeader(title: "Create", subtitle: "Pick one generator.", systemImage: "wand.and.stars")
                         .padding(.top, 8)
 
                     VStack(spacing: 10) {
@@ -166,11 +155,6 @@ struct CreateHubView: View {
                             .buttonStyle(.plain)
                         }
                     }
-
-                    NavigationLink(value: AppRoute.personas) {
-                        ActionRow(title: "Roast Personalities", subtitle: "Choose comedy voices.", systemImage: "theatermasks.fill", tint: RoastLabTheme.warning)
-                    }
-                    .buttonStyle(.plain)
                 }
                 .roastLabPage(maxWidth: RoastLabLayout.compactMaxWidth)
             }
@@ -391,7 +375,8 @@ struct VoiceRoastFeatureView: View {
                             Text("Celebrity Parody").tag("Celebrity Parody")
                             Text("Deadpan Host").tag("Deadpan Host")
                         }
-                        .pickerStyle(.segmented)
+                        .pickerStyle(.menu)
+                        .tint(.white)
                         HStack(spacing: 10) {
                             NeonButton(title: playback.isPlaying ? "Stop" : "Play", systemImage: playback.isPlaying ? "stop.fill" : "play.fill", tint: RoastLabTheme.electricBlue) {
                                 playback.isPlaying ? playback.stop() : playback.play(generator.output)
@@ -768,7 +753,6 @@ struct ShareCardsView: View {
 struct SettingsView: View {
     @EnvironmentObject private var services: AppServices
     @Environment(\.modelContext) private var modelContext
-    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = true
     @Query private var profiles: [UserProfile]
     @Query private var subscriptions: [SubscriptionState]
     @Query private var roasts: [RoastRequest]
@@ -776,51 +760,34 @@ struct SettingsView: View {
     @Query private var battles: [RoastBattle]
     @Query private var voices: [VoiceTranscript]
     @Query private var personas: [ComedyPersona]
-    @State private var style: HumorStyle = .playful
-    @State private var intensity: RoastIntensity = .medium
     @State private var voicePreviewsEnabled = true
 
     var body: some View {
         RoastLabBackground {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    SectionHeader(title: "Settings", subtitle: "Subscription, preferences, privacy, safety, and local data.", systemImage: "gearshape.fill")
+                    SectionHeader(title: "Settings", subtitle: nil, systemImage: "gearshape.fill")
                         .padding(.top, 8)
 
-                    GlassPanel {
-                        VStack(alignment: .leading, spacing: 14) {
-                            Label("Subscription", systemImage: "crown.fill")
-                                .font(.headline.weight(.bold))
-                                .foregroundStyle(.white)
-                            Text("Current plan: \(services.subscriptionStore.activePlan.displayName)")
-                                .foregroundStyle(RoastLabTheme.textSecondary)
-                            NavigationLink(value: AppRoute.paywall) {
-                                Text("Manage Subscription")
-                                    .font(.headline.weight(.bold))
-                                    .foregroundStyle(RoastLabTheme.acidGreen)
-                            }
-                        }
+                    NavigationLink(value: AppRoute.paywall) {
+                        ActionRow(title: "Subscription", subtitle: "Current plan: \(services.subscriptionStore.activePlan.displayName)", systemImage: "crown.fill", tint: RoastLabTheme.warning)
                     }
-
-                    StyleIntensityControls(style: $style, intensity: $intensity)
-                        .onChange(of: style) { _, newValue in updateProfile(style: newValue, intensity: intensity) }
-                        .onChange(of: intensity) { _, newValue in updateProfile(style: style, intensity: newValue) }
+                    .buttonStyle(.plain)
 
                     GlassPanel {
-                        VStack(alignment: .leading, spacing: 14) {
+                        VStack(alignment: .leading, spacing: 12) {
                             Toggle("Voice previews", isOn: $voicePreviewsEnabled)
                                 .tint(RoastLabTheme.hotPink)
                             Toggle("Safe comedy mode", isOn: .constant(true))
                                 .tint(RoastLabTheme.acidGreen)
-                            Text("Keeps roasts playful, non-targeted, and review-safe.")
+                            Text("Keeps roasts playful and non-targeted.")
                                 .font(.caption)
                                 .foregroundStyle(RoastLabTheme.textSecondary)
                         }
                     }
 
                     GlassPanel {
-                        VStack(alignment: .leading, spacing: 12) {
-                            SectionHeader(title: "Safety Guidelines", subtitle: "Comedic roasts only. No hate speech, harassment, threats, bullying minors, self-harm, or extremist content.", systemImage: "checkmark.shield.fill")
+                        VStack(alignment: .leading, spacing: 10) {
                             Link("Privacy Policy", destination: URL(string: "https://github.com/lanray07/RoastLab-AI/blob/main/PRIVACY.md")!)
                             Link("Terms of Use (EULA)", destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!)
                         }
@@ -852,11 +819,6 @@ struct SettingsView: View {
         if profiles.isEmpty {
             let profile = UserProfile()
             modelContext.insert(profile)
-            style = profile.resolvedHumorStyle
-            intensity = profile.resolvedRoastIntensity
-        } else if let profile = profiles.first {
-            style = profile.resolvedHumorStyle
-            intensity = profile.resolvedRoastIntensity
         }
 
         if subscriptions.isEmpty {
@@ -864,13 +826,6 @@ struct SettingsView: View {
         }
 
         services.comedyPersona.seedDefaultPersonas(in: modelContext, existing: personas)
-        try? modelContext.save()
-    }
-
-    private func updateProfile(style: HumorStyle, intensity: RoastIntensity) {
-        guard let profile = profiles.first else { return }
-        profile.humorStyle = style.rawValue
-        profile.roastIntensity = intensity.rawValue
         try? modelContext.save()
     }
 
@@ -884,7 +839,6 @@ struct SettingsView: View {
         profiles.forEach(modelContext.delete)
         try? modelContext.save()
         services.subscriptionStore.activateMock(plan: .free)
-        hasCompletedOnboarding = false
     }
 }
 

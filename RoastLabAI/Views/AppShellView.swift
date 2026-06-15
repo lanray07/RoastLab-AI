@@ -8,6 +8,7 @@ enum AppRoute: Hashable {
     case clapback
     case workplaceSafe
     case meme
+    case creatorStudio
     case personas
     case shareCards
     case paywall
@@ -16,16 +17,14 @@ enum AppRoute: Hashable {
 enum AppTab: String, CaseIterable, Identifiable {
     case dashboard
     case create
-    case studio
     case settings
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
-        case .dashboard: "Dashboard"
+        case .dashboard: "Home"
         case .create: "Create"
-        case .studio: "Studio"
         case .settings: "Settings"
         }
     }
@@ -34,21 +33,14 @@ enum AppTab: String, CaseIterable, Identifiable {
         switch self {
         case .dashboard: "flame.fill"
         case .create: "wand.and.stars"
-        case .studio: "movieclapper.fill"
         case .settings: "gearshape.fill"
         }
     }
 }
 
 struct AppShellView: View {
-    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
-
     var body: some View {
-        if hasCompletedOnboarding {
-            MainTabShell()
-        } else {
-            OnboardingView()
-        }
+        MainTabShell()
     }
 }
 
@@ -56,7 +48,6 @@ private struct MainTabShell: View {
     @State private var selectedTab: AppTab = .dashboard
     @State private var dashboardPath: [AppRoute] = []
     @State private var createPath: [AppRoute] = []
-    @State private var studioPath: [AppRoute] = []
     @State private var settingsPath: [AppRoute] = []
 
     var body: some View {
@@ -74,13 +65,6 @@ private struct MainTabShell: View {
             }
             .tabItem { Label(AppTab.create.title, systemImage: AppTab.create.icon) }
             .tag(AppTab.create)
-
-            NavigationStack(path: $studioPath) {
-                CreatorStudioView()
-                    .navigationDestination(for: AppRoute.self) { RouteDestinationView(route: $0) }
-            }
-            .tabItem { Label(AppTab.studio.title, systemImage: AppTab.studio.icon) }
-            .tag(AppTab.studio)
 
             NavigationStack(path: $settingsPath) {
                 SettingsView()
@@ -112,6 +96,8 @@ private struct RouteDestinationView: View {
             WorkplaceSafeModeView()
         case .meme:
             MemeGeneratorView()
+        case .creatorStudio:
+            CreatorStudioView()
         case .personas:
             PersonalityProfilesView()
         case .shareCards:
