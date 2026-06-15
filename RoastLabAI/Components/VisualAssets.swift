@@ -303,7 +303,7 @@ struct ComedyHeroStageView: View {
             }
             .padding(compact ? 18 : 22)
         }
-        .frame(minHeight: compact ? 190 : 248)
+        .frame(minHeight: compact ? 150 : 220)
         .shadow(color: theme.primary.opacity(0.28), radius: 24, y: 12)
         .onAppear { isLive = true }
     }
@@ -818,6 +818,7 @@ struct PremiumEmptyStateView: View {
     var mascot: RoastMascot = .friendlyBully
     var scene: RoastScene = .groupChat
     var framed = true
+    var showsScene = true
 
     var body: some View {
         if framed {
@@ -843,7 +844,9 @@ struct PremiumEmptyStateView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
-            HumanizedSceneIllustration(scene: scene, height: 138)
+            if showsScene {
+                HumanizedSceneIllustration(scene: scene, height: 118)
+            }
         }
     }
 }

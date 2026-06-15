@@ -24,7 +24,7 @@ enum RoastLabTheme {
 enum RoastLabLayout {
     static let readableMaxWidth: CGFloat = 860
     static let compactMaxWidth: CGFloat = 760
-    static let wideMaxWidth: CGFloat = 980
+    static let wideMaxWidth: CGFloat = 900
 }
 
 extension View {
@@ -184,6 +184,80 @@ struct MetricTile: View {
                     .lineLimit(2)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
+struct MetricStrip: View {
+    var title: String
+    var value: String
+    var systemImage: String
+    var tint: Color
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: systemImage)
+                .font(.subheadline.weight(.bold))
+                .foregroundStyle(tint)
+                .frame(width: 30, height: 30)
+                .background(Circle().fill(tint.opacity(0.15)))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(value)
+                    .font(.headline.weight(.black))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.76)
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(RoastLabTheme.textSecondary)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color.white.opacity(0.07))
+                .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.white.opacity(0.1)))
+        )
+    }
+}
+
+struct ActionRow: View {
+    var title: String
+    var subtitle: String
+    var systemImage: String
+    var tint: Color
+
+    var body: some View {
+        GlassPanel(padding: 14) {
+            HStack(spacing: 14) {
+                Image(systemName: systemImage)
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(.black)
+                    .frame(width: 42, height: 42)
+                    .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(tint))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.headline.weight(.black))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.82)
+                    Text(subtitle)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(RoastLabTheme.textSecondary)
+                        .lineLimit(2)
+                }
+
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(RoastLabTheme.textSecondary)
+            }
+            .frame(maxWidth: .infinity, minHeight: 50, alignment: .leading)
         }
     }
 }

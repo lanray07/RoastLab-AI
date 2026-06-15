@@ -11,15 +11,12 @@ enum AppRoute: Hashable {
     case personas
     case shareCards
     case paywall
-    case widgets
-    case watch
 }
 
 enum AppTab: String, CaseIterable, Identifiable {
     case dashboard
     case create
     case studio
-    case analytics
     case settings
 
     var id: String { rawValue }
@@ -29,7 +26,6 @@ enum AppTab: String, CaseIterable, Identifiable {
         case .dashboard: "Dashboard"
         case .create: "Create"
         case .studio: "Studio"
-        case .analytics: "Analytics"
         case .settings: "Settings"
         }
     }
@@ -39,7 +35,6 @@ enum AppTab: String, CaseIterable, Identifiable {
         case .dashboard: "flame.fill"
         case .create: "wand.and.stars"
         case .studio: "movieclapper.fill"
-        case .analytics: "chart.line.uptrend.xyaxis"
         case .settings: "gearshape.fill"
         }
     }
@@ -62,7 +57,6 @@ private struct MainTabShell: View {
     @State private var dashboardPath: [AppRoute] = []
     @State private var createPath: [AppRoute] = []
     @State private var studioPath: [AppRoute] = []
-    @State private var analyticsPath: [AppRoute] = []
     @State private var settingsPath: [AppRoute] = []
 
     var body: some View {
@@ -87,13 +81,6 @@ private struct MainTabShell: View {
             }
             .tabItem { Label(AppTab.studio.title, systemImage: AppTab.studio.icon) }
             .tag(AppTab.studio)
-
-            NavigationStack(path: $analyticsPath) {
-                AnalyticsDashboardView()
-                    .navigationDestination(for: AppRoute.self) { RouteDestinationView(route: $0) }
-            }
-            .tabItem { Label(AppTab.analytics.title, systemImage: AppTab.analytics.icon) }
-            .tag(AppTab.analytics)
 
             NavigationStack(path: $settingsPath) {
                 SettingsView()
@@ -131,10 +118,6 @@ private struct RouteDestinationView: View {
             ShareCardsView()
         case .paywall:
             PaywallView()
-        case .widgets:
-            WidgetPlaceholderView()
-        case .watch:
-            WatchPlaceholderView()
         }
     }
 }

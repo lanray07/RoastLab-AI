@@ -25,7 +25,7 @@ struct DailyRoastProviderPlaceholder: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<DailyRoastEntry>) -> Void) {
-        let entry = DailyRoastEntry(date: Date(), roast: "Daily roast placeholder.")
+        let entry = DailyRoastEntry(date: Date(), roast: "Daily roast ready.")
         completion(Timeline(entries: [entry], policy: .after(Date().addingTimeInterval(3_600))))
     }
 }

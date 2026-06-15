@@ -313,16 +313,13 @@ private struct PaywallContent: View {
                 VStack(spacing: 22) {
                     ComedyHeroStageView(
                         title: "RoastLab Pro",
-                        subtitle: "Unlimited battles, voice roasts, premium share cards, achievement art, and creator exports.",
+                        subtitle: "Unlimited roasts, battles, voice tools, share cards, and creator exports.",
                         kicker: "Premium comedy membership",
                         mascot: .savageQueen,
-                        theme: .neonRoast
+                        theme: .neonRoast,
+                        compact: true
                     )
-                    .padding(.top, 24)
-
-                    MascotCommitteeStrip(mascots: [.roastProfessor, .memeGoblin, .britishBanterKing, .savageQueen, .friendlyBully])
-
-                    AchievementShelfView(unlockedCount: 4)
+                    .padding(.top, 16)
 
                     ForEach(SubscriptionPlan.paidPlans) { plan in
                         PlanRow(plan: plan, price: priceText(for: plan), isSelected: selectedPlan == plan) {

@@ -41,7 +41,7 @@ enum RoastLabError: LocalizedError {
         case .unsafeInput:
             "That prompt is outside RoastLab AI safety rules. Try a playful, non-targeted setup."
         case .remoteServiceUnavailable:
-            "The remote AI endpoint is not configured yet. Mock AI is still available."
+            "RoastLab AI is using the built-in comedy engine for this review build."
         case .emptyPrompt:
             "Add a prompt, bio, transcript, or image first."
         }
@@ -106,7 +106,7 @@ final class AppServices: ObservableObject {
         AppServices(aiClient: MockAIService())
     }
 
-    static func makeRemote(endpoint: URL = URL(string: "https://YOUR_BACKEND_URL.com/roastlab-ai")!) -> AppServices {
+    static func makeRemote(endpoint: URL) -> AppServices {
         AppServices(aiClient: RemoteAIService(endpoint: endpoint))
     }
 }

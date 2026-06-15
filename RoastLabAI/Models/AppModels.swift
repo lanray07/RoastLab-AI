@@ -151,7 +151,7 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable, Codable {
         case .roastProMonthly, .roastProYearly:
             ["Unlimited roasts", "Voice roasts", "Roast battles", "Clapback generator", "Premium styles"]
         case .creatorProMonthly:
-            ["Creator studio", "Advanced personas", "Voice playback placeholder", "Premium exports", "Meme packs"]
+            ["Creator studio", "Advanced personas", "Voice playback previews", "Premium exports", "Meme packs"]
         }
     }
 }

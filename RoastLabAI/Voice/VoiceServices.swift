@@ -169,7 +169,7 @@ final class WaveformAnimationManager: ObservableObject {
 }
 
 @MainActor
-final class VoicePlaybackPlaceholder: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
+final class VoicePlaybackPreviewManager: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
     @Published var isPlaying = false
     @Published var selectedVoiceStyle = "AI Comedian"
 
